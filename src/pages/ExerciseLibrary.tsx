@@ -1,32 +1,39 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppStore, useDispatch } from '../store/AppContext'
+import { useAppStore } from '../store/AppContext'
 import { PageHeader } from '../components/layout/PageHeader'
 import { NeonCard } from '../components/ui/NeonCard'
 import { GlowButton } from '../components/ui/GlowButton'
-import { EXERCISES } from '../data/exercises'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { fromKg, formatDate } from '../utils/formatters'
-import type { MuscleGroupId, ExerciseCategory, Equipment } from '../types'
+import { createExercise } from '../api/exercises'
+import type { MuscleGroupId, ExerciseCategory, Equipment, TrackingType } from '../types'
 
 const CATEGORIES: ExerciseCategory[] = ['push', 'pull', 'legs', 'core', 'compound', 'cardio']
+const TRACKING_TYPES: { value: TrackingType; label: string }[] = [
+  { value: 'strength',   label: 'Strength (reps + weight)' },
+  { value: 'bodyweight', label: 'Bodyweight (reps, weight optional)' },
+  { value: 'duration',   label: 'Duration (time, weight optional)' },
+  { value: 'cardio',     label: 'Cardio (time + distance)' },
+]
 
 export function ExerciseLibrary() {
-  const { state } = useAppStore()
-  const dispatch = useDispatch()
+  const { state, dispatch } = useAppStore()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState<ExerciseCategory | 'all'>('all')
   const [showAddCustom, setShowAddCustom] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [customForm, setCustomForm] = useState({
     name: '',
     category: 'push' as ExerciseCategory,
     equipment: 'bodyweight' as Equipment,
+    tracking_type: 'strength' as TrackingType,
     primaryMuscle: 'chest' as MuscleGroupId,
     description: '',
   })
 
-  const allExercises = [...EXERCISES, ...state.customExercises]
+  const allExercises = state.customExercises
 
   const filtered = allExercises.filter((e) => {
     const matchesSearch =
@@ -37,22 +44,24 @@ export function ExerciseLibrary() {
     return matchesSearch && matchesCat
   })
 
-  function addCustomExercise() {
+  async function addCustomExercise() {
     if (!customForm.name.trim()) return
-    dispatch({
-      type: 'ADD_CUSTOM_EXERCISE',
-      exercise: {
-        id: 'custom-' + Date.now(),
+    setSaving(true)
+    try {
+      const ex = await createExercise({
         name: customForm.name.trim(),
         category: customForm.category,
         equipment: customForm.equipment,
+        tracking_type: customForm.tracking_type,
         description: customForm.description,
-        muscles: [{ muscleId: customForm.primaryMuscle, type: 'primary' }],
-        recommendedLevelRange: [1, 100],
-      },
-    })
-    setShowAddCustom(false)
-    setCustomForm({ name: '', category: 'push', equipment: 'bodyweight', primaryMuscle: 'chest', description: '' })
+        muscles: [{ muscle_id: customForm.primaryMuscle, type: 'primary' }],
+      })
+      dispatch({ type: 'ADD_CUSTOM_EXERCISE', exercise: ex })
+      setShowAddCustom(false)
+      setCustomForm({ name: '', category: 'push', equipment: 'bodyweight', tracking_type: 'strength', primaryMuscle: 'chest', description: '' })
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -68,7 +77,6 @@ export function ExerciseLibrary() {
       />
 
       <div className="px-4 py-3">
-        {/* Search */}
         <div className="mb-3">
           <input
             type="text"
@@ -79,7 +87,6 @@ export function ExerciseLibrary() {
           />
         </div>
 
-        {/* Category filters */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-3 hide-scrollbar">
           {(['all', ...CATEGORIES] as const).map((cat) => (
             <button
@@ -96,7 +103,7 @@ export function ExerciseLibrary() {
           ))}
         </div>
 
-        {/* PRs section */}
+        {/* PRs */}
         {Object.keys(state.personalRecords).length > 0 && search.length === 0 && catFilter === 'all' && (
           <div className="mb-4">
             <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Personal Records</div>
@@ -122,29 +129,30 @@ export function ExerciseLibrary() {
           </div>
         )}
 
-        {/* Exercise list */}
         <div className="flex flex-col gap-2">
           {filtered.map((ex) => {
-            const primaryMuscles = ex.muscles
-              .filter((m) => m.type === 'primary')
-              .map((m) => MUSCLE_GROUPS[m.muscleId as MuscleGroupId]?.shortName)
+            const primaryMuscles = ex.muscles.filter((m) => m.type === 'primary').map((m) => MUSCLE_GROUPS[m.muscleId as MuscleGroupId]?.shortName)
             const pr = state.personalRecords[ex.id]
-            const isCustom = state.customExercises.some((c) => c.id === ex.id)
-
+            const trackingBadgeColor: Record<TrackingType, string> = {
+              strength: 'bg-sl-purple/20 text-sl-purple',
+              bodyweight: 'bg-sl-blue/20 text-sl-blue',
+              duration: 'bg-emerald-500/20 text-emerald-400',
+              cardio: 'bg-orange-500/20 text-orange-400',
+            }
             return (
               <NeonCard key={ex.id} className="px-3 py-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-sm font-display font-semibold">{ex.name}</span>
-                      {isCustom && (
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-sl-blue/20 text-sl-blue font-mono">Custom</span>
-                      )}
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-mono ${trackingBadgeColor[ex.tracking_type ?? 'strength']}`}>
+                        {ex.tracking_type ?? 'strength'}
+                      </span>
                     </div>
                     <div className="text-xs text-sl-muted font-mono mt-0.5 capitalize">
                       {ex.equipment} · {primaryMuscles.join(', ')}
                     </div>
-                    {pr && (
+                    {pr && pr.weightKg > 0 && (
                       <div className="text-xs font-mono text-sl-gold mt-0.5">
                         PR: {fromKg(pr.weightKg, state.weightUnit).toFixed(1)} {state.weightUnit} × {pr.reps}
                       </div>
@@ -152,10 +160,7 @@ export function ExerciseLibrary() {
                   </div>
                   <button
                     className="text-xs font-mono text-sl-muted hover:text-sl-purple border border-sl-border hover:border-sl-purple/40 rounded-lg px-2 py-1 transition-colors flex-shrink-0"
-                    onClick={() => {
-                      const primaryMuscle = ex.muscles.find((m) => m.type === 'primary')
-                      if (primaryMuscle) navigate(`/muscles/${primaryMuscle.muscleId}`)
-                    }}
+                    onClick={() => { const m = ex.muscles.find((m) => m.type === 'primary'); if (m) navigate(`/muscles/${m.muscleId}`) }}
                   >
                     Muscles
                   </button>
@@ -173,9 +178,8 @@ export function ExerciseLibrary() {
       {showAddCustom && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowAddCustom(false)} />
-          <div className="relative z-10 w-full max-w-lg bg-sl-surface border-t border-sl-border rounded-t-2xl p-5">
+          <div className="relative z-10 w-full max-w-lg bg-sl-surface border-t border-sl-border rounded-t-2xl p-5 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-display font-bold mb-4">Add Custom Exercise</h3>
-
             <div className="flex flex-col gap-3 mb-4">
               <input
                 type="text"
@@ -187,21 +191,13 @@ export function ExerciseLibrary() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-mono text-sl-muted uppercase tracking-wider block mb-1">Category</label>
-                  <select
-                    value={customForm.category}
-                    onChange={(e) => setCustomForm((f) => ({ ...f, category: e.target.value as ExerciseCategory }))}
-                    className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple"
-                  >
+                  <select value={customForm.category} onChange={(e) => setCustomForm((f) => ({ ...f, category: e.target.value as ExerciseCategory }))} className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple">
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-mono text-sl-muted uppercase tracking-wider block mb-1">Equipment</label>
-                  <select
-                    value={customForm.equipment}
-                    onChange={(e) => setCustomForm((f) => ({ ...f, equipment: e.target.value as Equipment }))}
-                    className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple"
-                  >
+                  <select value={customForm.equipment} onChange={(e) => setCustomForm((f) => ({ ...f, equipment: e.target.value as Equipment }))} className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple">
                     {(['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight', 'band'] as const).map((e) => (
                       <option key={e} value={e}>{e}</option>
                     ))}
@@ -209,22 +205,30 @@ export function ExerciseLibrary() {
                 </div>
               </div>
               <div>
+                <label className="text-xs font-mono text-sl-muted uppercase tracking-wider block mb-1">Tracking Type</label>
+                <select value={customForm.tracking_type} onChange={(e) => setCustomForm((f) => ({ ...f, tracking_type: e.target.value as TrackingType }))} className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple">
+                  {TRACKING_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+              <div>
                 <label className="text-xs font-mono text-sl-muted uppercase tracking-wider block mb-1">Primary Muscle</label>
-                <select
-                  value={customForm.primaryMuscle}
-                  onChange={(e) => setCustomForm((f) => ({ ...f, primaryMuscle: e.target.value as MuscleGroupId }))}
-                  className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple"
-                >
+                <select value={customForm.primaryMuscle} onChange={(e) => setCustomForm((f) => ({ ...f, primaryMuscle: e.target.value as MuscleGroupId }))} className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple">
                   {Object.values(MUSCLE_GROUPS).map((m) => (
                     <option key={m.id} value={m.id}>{m.displayName}</option>
                   ))}
                 </select>
               </div>
+              <textarea
+                placeholder="Description (optional)"
+                value={customForm.description}
+                onChange={(e) => setCustomForm((f) => ({ ...f, description: e.target.value }))}
+                rows={2}
+                className="bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple resize-none"
+              />
             </div>
-
             <div className="flex gap-3">
-              <GlowButton className="flex-1" onClick={addCustomExercise} disabled={!customForm.name.trim()}>
-                Add Exercise
+              <GlowButton className="flex-1" onClick={addCustomExercise} disabled={!customForm.name.trim() || saving}>
+                {saving ? 'Saving…' : 'Add Exercise'}
               </GlowButton>
               <GlowButton variant="secondary" className="flex-1" onClick={() => setShowAddCustom(false)}>
                 Cancel

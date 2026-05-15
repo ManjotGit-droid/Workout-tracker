@@ -7,7 +7,7 @@ import { LevelBadge } from '../components/progression/LevelBadge'
 import { NeonCard } from '../components/ui/NeonCard'
 import { GlowButton } from '../components/ui/GlowButton'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
-import { EXERCISES } from '../data/exercises'
+
 import { getRecommendations } from '../utils/recommendations'
 import { getLevelColor } from '../data/levelConfig'
 import { formatDate, fromKg } from '../utils/formatters'
@@ -31,7 +31,7 @@ export function MuscleDetail() {
     )
   }
 
-  const allExercises = [...EXERCISES, ...state.customExercises]
+  const allExercises = state.customExercises
   const { glow } = getLevelColor(muscleState.level)
 
   // Recent workouts that hit this muscle
