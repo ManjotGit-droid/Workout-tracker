@@ -1,9 +1,7 @@
 import type { AppState, MuscleGroupState, MuscleGroupId, WorkoutSession, LevelUpEvent, PersonalRecord } from '../types'
 import type { AppAction } from './actions'
-import { calculateWorkoutXP } from '../utils/xpCalculator'
 import { calculateRank } from '../utils/rankCalculator'
 import { getXPThreshold } from '../data/levelConfig'
-import { EXERCISES } from '../data/exercises'
 
 function uid(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
@@ -29,29 +27,51 @@ function applyXP(
 
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
-    case 'START_WORKOUT': {
-      if (state.activeWorkout) return state
-      const workout: WorkoutSession = {
-        id: uid(),
-        date: new Date().toISOString().slice(0, 10),
-        startTime: Date.now(),
-        exercises: [],
-        completed: false,
-        xpGained: {},
+    // ── API-backed startup actions ──────────────────────────────────────────
+
+    case 'LOAD_EXERCISES':
+      return { ...state, customExercises: action.exercises }
+
+    case 'LOAD_WORKOUTS': {
+      const totalWorkouts = action.workouts.length
+      const totalSets = action.workouts.reduce(
+        (sum, w) => sum + w.exercises.reduce((s, e) => s + e.sets.filter((x) => x.completed).length, 0),
+        0,
+      )
+      return {
+        ...state,
+        profile: {
+          ...state.profile,
+          workoutHistory: action.workouts,
+          totalWorkouts,
+          totalSets,
+        },
       }
-      return { ...state, activeWorkout: workout }
     }
 
-    case 'ADD_EXERCISE': {
+    case 'LOAD_MUSCLE_XP': {
+      const newProfile = { ...state.profile, muscleGroups: action.muscleGroups }
+      newProfile.rank = calculateRank(newProfile)
+      return { ...state, profile: newProfile }
+    }
+
+    case 'RESTORE_WORKOUT':
+      return { ...state, activeWorkout: action.workout }
+
+    // ── Workout CRUD (API-driven IDs) ───────────────────────────────────────
+
+    case 'ADD_EXERCISE_WITH_ID': {
       if (!state.activeWorkout) return state
-      const updated: WorkoutSession = {
-        ...state.activeWorkout,
-        exercises: [
-          ...state.activeWorkout.exercises,
-          { id: uid(), exerciseId: action.exerciseId, sets: [] },
-        ],
+      return {
+        ...state,
+        activeWorkout: {
+          ...state.activeWorkout,
+          exercises: [
+            ...state.activeWorkout.exercises,
+            { id: action.loggedExerciseId, exerciseId: action.exerciseId, sets: [] },
+          ],
+        },
       }
-      return { ...state, activeWorkout: updated }
     }
 
     case 'REMOVE_EXERCISE': {
@@ -65,19 +85,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       }
     }
 
-    case 'LOG_SET': {
+    case 'LOG_SET_WITH_ID': {
       if (!state.activeWorkout) return state
-      const newSet = {
-        id: uid(),
-        ...action.set,
-        timestamp: Date.now(),
-      }
       return {
         ...state,
         activeWorkout: {
           ...state.activeWorkout,
           exercises: state.activeWorkout.exercises.map((e) =>
-            e.id === action.loggedExerciseId ? { ...e, sets: [...e.sets, newSet] } : e,
+            e.id === action.loggedExerciseId ? { ...e, sets: [...e.sets, action.set] } : e,
           ),
         },
       }
@@ -118,29 +133,28 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       }
     }
 
-    case 'FINISH_WORKOUT': {
+    // ── Finish workout: server computed XP, we still do level-up animations ─
+
+    case 'FINISH_WORKOUT_WITH_XP': {
       if (!state.activeWorkout) return state
 
-      const allExercises = [...EXERCISES, ...state.customExercises]
-      const xpGained = calculateWorkoutXP(state.activeWorkout.exercises, allExercises)
-
-      // Update muscle groups + collect level-up events
+      const xpGained = action.muscleXp ?? {}
       const newMuscleGroups = { ...state.profile.muscleGroups }
       const pendingLevelUps: LevelUpEvent[] = []
 
       for (const [muscleId, xp] of Object.entries(xpGained) as [MuscleGroupId, number][]) {
         const current = newMuscleGroups[muscleId]
+        if (!current) continue
         const { updated, levelUps } = applyXP(current, xp)
         newMuscleGroups[muscleId] = updated
-        if (levelUps > 0) {
-          pendingLevelUps.push({ muscleId, newLevel: updated.level })
-        }
+        if (levelUps > 0) pendingLevelUps.push({ muscleId, newLevel: updated.level })
       }
 
-      // Update personal records
+      // Update personal records for strength/bodyweight sets
       const newPRs = { ...state.personalRecords }
       for (const loggedEx of state.activeWorkout.exercises) {
         for (const set of loggedEx.sets.filter((s) => s.completed)) {
+          if (!set.weight || !set.reps) continue
           const existing: PersonalRecord | undefined = newPRs[loggedEx.exerciseId]
           if (!existing || set.weight > existing.weightKg) {
             newPRs[loggedEx.exerciseId] = {
@@ -170,11 +184,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       }
       newProfile.rank = calculateRank(newProfile)
 
-      // Check if rank changed
       if (newProfile.rank !== state.profile.rank) {
-        pendingLevelUps.forEach((e) => {
-          if (!e.newRank) e.newRank = newProfile.rank
-        })
+        pendingLevelUps.forEach((e) => { if (!e.newRank) e.newRank = newProfile.rank })
         if (pendingLevelUps.length === 0) {
           pendingLevelUps.push({ muscleId: 'chest', newLevel: 0, newRank: newProfile.rank })
         }

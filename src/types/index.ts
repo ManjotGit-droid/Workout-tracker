@@ -26,6 +26,9 @@ export type ExerciseCategory = 'push' | 'pull' | 'legs' | 'core' | 'cardio' | 'c
 
 export type Equipment = 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'band'
 
+// strength = reps + weight, bodyweight = reps (weight optional), duration = time, cardio = time + distance
+export type TrackingType = 'strength' | 'bodyweight' | 'duration' | 'cardio'
+
 export interface MuscleTarget {
   muscleId: MuscleGroupId
   type: 'primary' | 'secondary'
@@ -39,13 +42,17 @@ export interface Exercise {
   description: string
   recommendedLevelRange: [number, number]
   equipment: Equipment
+  tracking_type?: TrackingType
 }
 
 export interface LoggedSet {
   id: string
-  reps: number
-  weight: number
+  reps?: number
+  weight?: number
+  duration?: number   // seconds
+  distance?: number   // metres
   completed: boolean
+  notes?: string
   timestamp: number
 }
 

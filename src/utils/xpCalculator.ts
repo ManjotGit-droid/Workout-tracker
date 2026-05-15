@@ -25,7 +25,7 @@ export function calculateWorkoutXP(
 
     for (const set of loggedEx.sets.filter((s) => s.completed)) {
       for (const muscle of exercise.muscles) {
-        const xp = calculateXPForSet(set.reps, set.weight, muscle.type)
+        const xp = calculateXPForSet(set.reps ?? 0, set.weight ?? 0, muscle.type)
         xpMap[muscle.muscleId] = (xpMap[muscle.muscleId] ?? 0) + xp
       }
     }

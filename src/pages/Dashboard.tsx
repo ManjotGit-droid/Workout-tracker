@@ -9,7 +9,6 @@ import { RANK_COLORS } from '../data/levelConfig'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { formatDate } from '../utils/formatters'
 import type { MuscleGroupId } from '../types'
-import { EXERCISES } from '../data/exercises'
 
 export function Dashboard() {
   const { state } = useAppStore()
@@ -154,8 +153,7 @@ export function Dashboard() {
               const workedMuscles = Object.keys(w.xpGained) as MuscleGroupId[]
               const exerciseNames = w.exercises
                 .map((e) => {
-                  const ex = EXERCISES.find((x) => x.id === e.exerciseId) ??
-                    state.customExercises.find((x) => x.id === e.exerciseId)
+                  const ex = state.customExercises.find((x) => x.id === e.exerciseId)
                   return ex?.name ?? e.exerciseId
                 })
                 .slice(0, 3)

@@ -1,19 +1,20 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAppStore, useDispatch } from '../store/AppContext'
+import { exportData, importData, resetData } from '../api/data'
 import { PageHeader } from '../components/layout/PageHeader'
 import { NeonCard } from '../components/ui/NeonCard'
 import { GlowButton } from '../components/ui/GlowButton'
 import { LevelBadge } from '../components/progression/LevelBadge'
 import { XPBar } from '../components/progression/XPBar'
 import { MUSCLE_GROUPS, MUSCLE_GROUP_IDS } from '../data/muscleGroups'
-import { EXERCISES } from '../data/exercises'
+
 import { getLevelColor } from '../data/levelConfig'
 import { fromKg, formatDate, todayISO } from '../utils/formatters'
 import { RankBadge } from '../components/progression/RankBadge'
 
-type Tab = 'muscles' | 'records' | 'body'
+type Tab = 'muscles' | 'records' | 'body' | 'data'
 
 export function Progress() {
   const { state } = useAppStore()
@@ -23,8 +24,11 @@ export function Progress() {
   const [bodyWeight, setBodyWeight] = useState('')
   const [bodyFat, setBodyFat] = useState('')
   const [bodyDate, setBodyDate] = useState(todayISO())
+  const [dataMsg, setDataMsg] = useState('')
+  const [resetting, setResetting] = useState(false)
+  const importRef = useRef<HTMLInputElement>(null)
 
-  const allExercises = [...EXERCISES, ...state.customExercises]
+  const allExercises = state.customExercises
 
   // Sort muscles by level desc
   const sortedMuscles = MUSCLE_GROUP_IDS
@@ -60,7 +64,7 @@ export function Progress() {
 
       {/* Tabs */}
       <div className="flex border-b border-sl-border">
-        {(['muscles', 'records', 'body'] as Tab[]).map((t) => (
+        {(['muscles', 'records', 'body', 'data'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -268,6 +272,75 @@ export function Progress() {
                   ))}
                 </div>
               </div>
+            )}
+          </div>
+        )}
+        {/* Data Management Tab */}
+        {tab === 'data' && (
+          <div className="flex flex-col gap-4">
+            <NeonCard className="p-4">
+              <h3 className="text-sm font-display font-bold mb-1">Export Data</h3>
+              <p className="text-xs font-mono text-sl-muted mb-3">Download all your workouts and exercises as a JSON backup.</p>
+              <GlowButton size="sm" variant="secondary" onClick={() => exportData().catch(() => setDataMsg('Export failed'))}>
+                Download Backup
+              </GlowButton>
+            </NeonCard>
+
+            <NeonCard className="p-4">
+              <h3 className="text-sm font-display font-bold mb-1">Import Data</h3>
+              <p className="text-xs font-mono text-sl-muted mb-3">Restore from a previously exported JSON backup. This replaces all current data.</p>
+              <input
+                ref={importRef}
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  try {
+                    const result = await importData(file)
+                    setDataMsg(`Imported ${result.imported.workouts} workouts, ${result.imported.exercises} exercises`)
+                    window.location.reload()
+                  } catch {
+                    setDataMsg('Import failed — invalid backup file')
+                  }
+                }}
+              />
+              <GlowButton size="sm" variant="secondary" onClick={() => importRef.current?.click()}>
+                Choose Backup File
+              </GlowButton>
+            </NeonCard>
+
+            <NeonCard className="p-4">
+              <h3 className="text-sm font-display font-bold mb-1 text-sl-red">Reset All Data</h3>
+              <p className="text-xs font-mono text-sl-muted mb-3">Delete all workouts and muscle XP. Exercise library is kept.</p>
+              {!resetting ? (
+                <GlowButton size="sm" variant="danger" onClick={() => setResetting(true)}>
+                  Reset Data
+                </GlowButton>
+              ) : (
+                <div className="flex gap-2">
+                  <GlowButton
+                    size="sm"
+                    variant="danger"
+                    onClick={async () => {
+                      await resetData()
+                      setResetting(false)
+                      setDataMsg('Data reset complete')
+                      window.location.reload()
+                    }}
+                  >
+                    Confirm Reset
+                  </GlowButton>
+                  <GlowButton size="sm" variant="secondary" onClick={() => setResetting(false)}>
+                    Cancel
+                  </GlowButton>
+                </div>
+              )}
+            </NeonCard>
+
+            {dataMsg && (
+              <div className="text-xs font-mono text-sl-muted text-center py-2">{dataMsg}</div>
             )}
           </div>
         )}

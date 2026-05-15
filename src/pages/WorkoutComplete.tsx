@@ -7,7 +7,7 @@ import { XPBar } from '../components/progression/XPBar'
 import { GlowButton } from '../components/ui/GlowButton'
 import { NeonCard } from '../components/ui/NeonCard'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
-import { EXERCISES } from '../data/exercises'
+
 import { getRecommendations } from '../utils/recommendations'
 import { getLevelColor } from '../data/levelConfig'
 import type { MuscleGroupId } from '../types'
@@ -33,7 +33,7 @@ export function WorkoutComplete() {
 
   if (!lastCompletedWorkout) return null
 
-  const allExercises = [...EXERCISES, ...customExercises]
+  const allExercises = customExercises
   const workedMuscles = Object.keys(lastCompletedWorkout.xpGained) as MuscleGroupId[]
 
   const durationSec = lastCompletedWorkout.endTime
