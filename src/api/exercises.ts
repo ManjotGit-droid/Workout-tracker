@@ -1,18 +1,9 @@
-import { api } from './client'
+import { getDB } from '../db'
+import { uid } from '../db/utils'
 import type { Exercise, ExerciseCategory, Equipment, MuscleGroupId, TrackingType } from '../types'
+import type { ExerciseRecord } from '../db/schema'
 
-// API response shape (snake_case from SQLite)
-interface ApiExercise {
-  id: string
-  name: string
-  category: string
-  equipment: string
-  tracking_type: string
-  description: string
-  muscles: { muscle_id: string; type: string }[]
-}
-
-function toExercise(r: ApiExercise): Exercise {
+function toExercise(r: ExerciseRecord): Exercise {
   return {
     id: r.id,
     name: r.name,
@@ -29,8 +20,9 @@ function toExercise(r: ApiExercise): Exercise {
 }
 
 export async function fetchExercises(): Promise<Exercise[]> {
-  const rows = await api.get<ApiExercise[]>('/exercises')
-  return rows.map(toExercise)
+  const db = await getDB()
+  const rows = await db.getAll('exercises')
+  return rows.map(toExercise).sort((a, b) => a.name.localeCompare(b.name))
 }
 
 export async function createExercise(data: {
@@ -41,8 +33,18 @@ export async function createExercise(data: {
   description?: string
   muscles?: { muscle_id: string; type: string }[]
 }): Promise<Exercise> {
-  const row = await api.post<ApiExercise>('/exercises', data)
-  return toExercise(row)
+  const db = await getDB()
+  const record: ExerciseRecord = {
+    id: uid(),
+    name: data.name.trim(),
+    category: data.category,
+    equipment: data.equipment,
+    tracking_type: data.tracking_type ?? 'strength',
+    description: data.description?.trim() ?? '',
+    muscles: data.muscles ?? [],
+  }
+  await db.add('exercises', record)
+  return toExercise(record)
 }
 
 export async function updateExercise(id: string, data: Partial<{
@@ -53,10 +55,15 @@ export async function updateExercise(id: string, data: Partial<{
   description: string
   muscles: { muscle_id: string; type: string }[]
 }>): Promise<Exercise> {
-  const row = await api.put<ApiExercise>(`/exercises/${id}`, data)
-  return toExercise(row)
+  const db = await getDB()
+  const existing = await db.get('exercises', id)
+  if (!existing) throw new Error('Exercise not found')
+  const updated: ExerciseRecord = { ...existing, ...data }
+  await db.put('exercises', updated)
+  return toExercise(updated)
 }
 
 export async function deleteExercise(id: string): Promise<void> {
-  await api.delete(`/exercises/${id}`)
+  const db = await getDB()
+  await db.delete('exercises', id)
 }

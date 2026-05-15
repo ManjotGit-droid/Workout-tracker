@@ -9,7 +9,7 @@ import { appReducer } from './reducer'
 import { MUSCLE_GROUP_IDS } from '../data/muscleGroups'
 import { getXPThreshold } from '../data/levelConfig'
 import { fetchExercises } from '../api/exercises'
-import { fetchWorkouts, createWorkout, addExerciseToWorkout, removeExerciseFromWorkout, logSet, updateSet, deleteSet, completeWorkout } from '../api/workouts'
+import { fetchWorkouts, createWorkout, addExerciseToWorkout, removeExerciseFromWorkout, logSet, updateSet, deleteSet, completeWorkout, deleteWorkout } from '../api/workouts'
 import { fetchMuscleXp } from '../api/stats'
 
 function createDefaultState(): AppState {
@@ -197,7 +197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     workoutIdRef.current = null
     dispatch({ type: 'DISCARD_WORKOUT' })
     if (wid) {
-      await fetch(`/api/workouts/${wid}`, { method: 'DELETE' }).catch(console.warn)
+      await deleteWorkout(wid).catch(console.warn)
     }
   }, [])
 
