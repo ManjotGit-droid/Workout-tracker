@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export function useLocalStorage<T>(key: string, fallback: T): [T, (v: T) => void] {
+export const useLocalStorage = <T>(key: string, fallback: T): [T, (v: T) => void] => {
   const [stored, setStored] = useState<T>(() => {
     try {
       const item = localStorage.getItem(key)
@@ -10,7 +10,7 @@ export function useLocalStorage<T>(key: string, fallback: T): [T, (v: T) => void
     }
   })
 
-  function setValue(value: T) {
+  const setValue = (value: T): void => {
     try {
       setStored(value)
       localStorage.setItem(key, JSON.stringify(value))

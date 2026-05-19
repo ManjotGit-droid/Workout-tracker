@@ -1,12 +1,12 @@
 import type { MuscleGroupId, Exercise } from '../types'
 
-export function getRecommendations(
+export const getRecommendations = (
   muscleId: MuscleGroupId,
   currentLevel: number,
   exerciseDb: Exercise[],
   recentExerciseIds: string[] = [],
   count = 4,
-): Exercise[] {
+): Exercise[] => {
   const minLevel = Math.max(1, currentLevel - 2)
   const maxLevel = currentLevel + 6
 

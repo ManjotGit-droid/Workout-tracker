@@ -3,12 +3,12 @@ import { useAppStore, useDispatch } from '../../store/AppContext'
 import { MUSCLE_GROUPS } from '../../data/muscleGroups'
 import { RANK_COLORS } from '../../data/levelConfig'
 
-export function LevelUpModal() {
+export const LevelUpModal = () => {
   const { state } = useAppStore()
   const dispatch = useDispatch()
   const event = state.pendingLevelUps[0]
 
-  function dismiss() {
+  const dismiss = () => {
     if (event) dispatch({ type: 'DISMISS_LEVEL_UP', muscleId: event.muscleId })
   }
 

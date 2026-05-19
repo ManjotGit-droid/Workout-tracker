@@ -13,7 +13,7 @@ const sizeMap = {
   xl: 'w-24 h-24 text-4xl',
 }
 
-export function RankBadge({ rank, size = 'md' }: Props) {
+export const RankBadge = ({ rank, size = 'md' }: Props) => {
   const colors = RANK_COLORS[rank]
 
   return (

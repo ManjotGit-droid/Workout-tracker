@@ -11,24 +11,24 @@ import { toKg } from '../utils/formatters'
 import type { MuscleGroupId, TrackingType } from '../types'
 
 // Format seconds → mm:ss display
-function fmtDuration(secs: number): string {
+const fmtDuration = (secs: number): string => {
   const m = Math.floor(secs / 60).toString()
   const s = (secs % 60).toString().padStart(2, '0')
   return `${m}:${s}`
 }
 
 // Parse "1:30" or "90" → seconds
-function parseDuration(val: string): number | undefined {
+const parseDuration = (val: string): number | undefined => {
   if (!val.trim()) return undefined
   if (val.includes(':')) {
     const [m, s] = val.split(':').map(Number)
-    return (m * 60) + (s ?? 0)
+    return m * 60 + (s ?? 0)
   }
   const n = parseFloat(val)
   return isNaN(n) ? undefined : Math.round(n)
 }
 
-function TrackingHint({ type }: { type: TrackingType }) {
+const TrackingHint = ({ type }: { type: TrackingType }) => {
   const hints: Record<TrackingType, string> = {
     strength: 'reps · weight',
     bodyweight: 'reps · optional weight',
@@ -38,32 +38,57 @@ function TrackingHint({ type }: { type: TrackingType }) {
   return <span className="text-xs font-mono text-sl-muted ml-1 opacity-60">{hints[type]}</span>
 }
 
-export function WorkoutActive() {
-  const { state, dispatch, startWorkout, addExercise, removeExercise, logNewSet, patchSet, removeSet, finishWorkout, discardWorkout } = useAppStore()
+export const WorkoutActive = () => {
+  const { state, dispatch, startWorkout, addExercise, removeExercise, logNewSet, patchSet, removeSet, finishWorkout, discardWorkout, pauseWorkout, resumeWorkout } = useAppStore()
   const navigate = useNavigate()
   const { activeWorkout, weightUnit } = state
-  const timer = useWorkoutTimer(activeWorkout?.startTime ?? null)
+  const isPaused = !!activeWorkout?.pausedAt
+  const timer = useWorkoutTimer({
+    startTime: activeWorkout?.startTime ?? null,
+    pausedAt: activeWorkout?.pausedAt ?? null,
+    pausedDuration: activeWorkout?.pausedDuration ?? 0,
+  })
 
   const [search, setSearch] = useState('')
-  const [showSearch, setShowSearch] = useState(!activeWorkout || activeWorkout.exercises.length === 0)
+  const [showSearch, setShowSearch] = useState(!!activeWorkout && activeWorkout.exercises.length === 0)
   const [starting, setStarting] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
 
   const allExercises = state.customExercises
 
-  // Start workout if none active
-  if (!activeWorkout && !starting) {
+  const handleStart = async () => {
+    if (starting) return
     setStarting(true)
-    startWorkout().catch(console.error)
+    try {
+      await startWorkout()
+      setShowSearch(true)
+    } finally {
+      setStarting(false)
+    }
+  }
+
+  // No active workout → show explicit Start screen instead of auto-creating one
+  if (!activeWorkout) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-sl-muted font-mono text-sm">Starting workout…</div>
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+        <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Ready when you are</div>
+        <h1 className="text-2xl font-display font-bold text-sl-text mb-2">Start a workout</h1>
+        <p className="text-sm text-sl-muted font-mono mb-6 max-w-xs">
+          Nothing is being tracked yet. Tap below to begin a new session — the timer only starts after you press Start.
+        </p>
+        <GlowButton className="px-8 py-3" disabled={starting} onClick={handleStart}>
+          {starting ? 'Starting…' : 'Start workout'}
+        </GlowButton>
+        <button
+          className="mt-4 text-xs font-mono text-sl-muted hover:text-sl-text"
+          onClick={() => navigate('/')}
+        >
+          Back to dashboard
+        </button>
       </div>
     )
   }
-
-  if (!activeWorkout) return null
 
   const filtered = allExercises.filter(
     (e) =>
@@ -71,13 +96,13 @@ export function WorkoutActive() {
       e.muscles.some((m) => MUSCLE_GROUPS[m.muscleId as MuscleGroupId]?.name?.toLowerCase().includes(search.toLowerCase())),
   )
 
-  async function handleAddExercise(exerciseId: string) {
+  const handleAddExercise = async (exerciseId: string) => {
     await addExercise(exerciseId)
     setSearch('')
     setShowSearch(false)
   }
 
-  async function handleAddSet(loggedExId: string, trackingType: TrackingType) {
+  const handleAddSet = async (loggedExId: string, trackingType: TrackingType) => {
     const defaults: Parameters<typeof logNewSet>[1] = {}
     if (trackingType === 'strength') { defaults.reps = 10; defaults.weight = 0 }
     else if (trackingType === 'bodyweight') { defaults.reps = 10 }
@@ -86,7 +111,7 @@ export function WorkoutActive() {
     await logNewSet(loggedExId, defaults)
   }
 
-  async function handlePatchSet(loggedExId: string, setId: string, field: string, raw: string) {
+  const handlePatchSet = async (loggedExId: string, setId: string, field: string, raw: string) => {
     if (field === 'reps') {
       const val = parseInt(raw, 10)
       if (!isNaN(val)) await patchSet(loggedExId, setId, { reps: val })
@@ -102,16 +127,16 @@ export function WorkoutActive() {
     }
   }
 
-  async function handleToggleSet(loggedExId: string, setId: string, completed: boolean) {
+  const handleToggleSet = async (loggedExId: string, setId: string, completed: boolean) => {
     await patchSet(loggedExId, setId, { completed })
   }
 
-  async function handleFinish() {
+  const handleFinish = async () => {
     await finishWorkout()
     navigate('/workout/complete', { replace: true })
   }
 
-  async function handleDiscard() {
+  const handleDiscard = async () => {
     await discardWorkout()
     navigate('/')
   }
@@ -125,11 +150,20 @@ export function WorkoutActive() {
     <div className="min-h-screen">
       <PageHeader
         title="Workout"
-        subtitle={timer}
+        subtitle={isPaused ? `${timer} · Paused` : timer}
         right={
           <div className="flex gap-2">
-            <GlowButton variant="secondary" size="sm" onClick={() => setConfirmDiscard(true)}>
-              Discard
+            {isPaused ? (
+              <GlowButton size="sm" onClick={() => resumeWorkout().catch(console.error)}>
+                Resume
+              </GlowButton>
+            ) : (
+              <GlowButton variant="secondary" size="sm" onClick={() => pauseWorkout().catch(console.error)}>
+                Pause
+              </GlowButton>
+            )}
+            <GlowButton variant="danger" size="sm" onClick={() => setConfirmDiscard(true)}>
+              Stop
             </GlowButton>
             <GlowButton size="sm" disabled={completedSets === 0} onClick={handleFinish}>
               Finish
@@ -138,7 +172,24 @@ export function WorkoutActive() {
         }
       />
 
-      <div className="px-4 py-3">
+      {isPaused && (
+        <div className="mx-4 mt-3 mb-1 p-3 rounded-lg border border-sl-purple/40 bg-sl-purple/10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-sl-purple">
+              <path d="M10 4H6v16h4V4zM18 4h-4v16h4V4z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="text-xs font-display font-semibold text-sl-purple">Workout paused — timer stopped</span>
+          </div>
+          <button
+            className="text-xs font-mono text-sl-muted hover:text-sl-purple px-2 py-1 rounded border border-sl-border hover:border-sl-purple/40 transition-colors"
+            onClick={() => resumeWorkout().catch(console.error)}
+          >
+            Resume
+          </button>
+        </div>
+      )}
+
+      <div className={`px-4 py-3 transition-opacity ${isPaused ? 'opacity-50 pointer-events-none select-none' : ''}`}>
         {completedSets > 0 && (
           <div className="text-xs font-mono text-sl-muted text-center mb-3">
             <span className="text-sl-purple font-bold">{completedSets}</span> sets completed
@@ -295,10 +346,12 @@ export function WorkoutActive() {
           <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="absolute inset-0 bg-black/60" onClick={() => setConfirmDiscard(false)} />
             <motion.div className="relative z-10 w-full max-w-lg bg-sl-surface border-t border-sl-border rounded-t-2xl p-6" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}>
-              <h3 className="text-lg font-display font-bold mb-2">Discard workout?</h3>
-              <p className="text-sm text-sl-muted font-mono mb-4">All logged sets will be lost.</p>
+              <h3 className="text-lg font-display font-bold mb-2">Stop workout?</h3>
+              <p className="text-sm text-sl-muted font-mono mb-4">
+                This ends the session without saving. All logged sets will be lost — to keep your progress, use Finish instead.
+              </p>
               <div className="flex gap-3">
-                <GlowButton variant="danger" className="flex-1" onClick={handleDiscard}>Discard</GlowButton>
+                <GlowButton variant="danger" className="flex-1" onClick={handleDiscard}>Stop &amp; discard</GlowButton>
                 <GlowButton variant="secondary" className="flex-1" onClick={() => setConfirmDiscard(false)}>Keep going</GlowButton>
               </div>
             </motion.div>
@@ -311,7 +364,7 @@ export function WorkoutActive() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function SetHeaders({ trackingType, weightUnit }: { trackingType: TrackingType; weightUnit: string }) {
+const SetHeaders = ({ trackingType, weightUnit }: { trackingType: TrackingType; weightUnit: string }) => {
   const cols = getColConfig(trackingType)
   return (
     <div className={`grid ${cols.grid} gap-2 text-xs font-mono text-sl-muted uppercase tracking-wider mb-1.5 px-1`}>
@@ -332,10 +385,10 @@ type SetRowProps = {
   onRemove: () => void
 }
 
-function SetRow({ idx, set, trackingType, weightUnit, onPatch, onToggle, onRemove }: SetRowProps) {
+const SetRow = ({ idx, set, trackingType, weightUnit, onPatch, onToggle, onRemove }: SetRowProps) => {
   const cols = getColConfig(trackingType)
 
-  function displayValue(field: string): string {
+  const displayValue = (field: string): string => {
     if (field === 'reps') return String(set.reps ?? 10)
     if (field === 'weight') {
       if (!set.weight) return ''
@@ -381,7 +434,7 @@ function SetRow({ idx, set, trackingType, weightUnit, onPatch, onToggle, onRemov
   )
 }
 
-function getColConfig(type: TrackingType): { grid: string; labels: string[]; fields: string[] } {
+const getColConfig = (type: TrackingType): { grid: string; labels: string[]; fields: string[] } => {
   switch (type) {
     case 'strength':
       return { grid: 'grid-cols-[28px_1fr_1fr_44px]', labels: ['Reps', 'kg'], fields: ['reps', 'weight'] }

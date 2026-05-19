@@ -7,20 +7,20 @@ interface Props {
   onClick?: () => void
 }
 
-const glowMap = {
-  purple: 'border-sl-purple/40 shadow-neon-sm hover:border-sl-purple/70',
-  blue:   'border-sl-blue/40 hover:border-sl-blue/70',
-  gold:   'border-sl-gold/40 hover:border-sl-gold/70',
-  none:   'border-sl-border',
+// Apple-style card — subtle shadow, hairline border, no neon glow.
+// `glow` prop is preserved for API compatibility but only adds a thin coloured ring.
+const accentRing = {
+  purple: 'ring-1 ring-brand/20',
+  blue:   'ring-1 ring-brand/20',
+  gold:   'ring-1 ring-gold/25',
+  none:   '',
 }
 
-export function NeonCard({ children, className = '', glow = 'none', onClick }: Props) {
-  return (
-    <div
-      className={`bg-sl-surface border rounded-xl transition-all duration-200 ${glowMap[glow]} ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''} ${className}`}
-      onClick={onClick}
-    >
-      {children}
-    </div>
-  )
-}
+export const NeonCard = ({ children, className = '', glow = 'none', onClick }: Props) => (
+  <div
+    className={`app-card ${accentRing[glow]} ${onClick ? 'app-card-pressable cursor-pointer' : ''} ${className}`}
+    onClick={onClick}
+  >
+    {children}
+  </div>
+)

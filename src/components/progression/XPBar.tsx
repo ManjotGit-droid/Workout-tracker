@@ -9,7 +9,14 @@ interface Props {
   delay?: number
 }
 
-export function XPBar({ xp, xpToNext, level, color = '#9333ea', showLabel = true, delay = 0 }: Props) {
+export const XPBar = ({
+  xp,
+  xpToNext,
+  level,
+  color = '#9333ea',
+  showLabel = true,
+  delay = 0,
+}: Props) => {
   const pct = xpToNext > 0 ? Math.min(100, (xp / xpToNext) * 100) : 100
 
   return (

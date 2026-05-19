@@ -26,11 +26,20 @@ export type AppAction =
   | { type: 'FINISH_WORKOUT_WITH_XP'; muscleXp: Partial<Record<MuscleGroupId, number>> }
   | { type: 'DISCARD_WORKOUT' }
 
+  // ── Pause / resume ─────────────────────────────────────────────────────────
+  | { type: 'PAUSE_WORKOUT'; pausedAt: number }
+  | { type: 'RESUME_WORKOUT'; pausedDuration: number }
+
   // ── Level / rank ───────────────────────────────────────────────────────────
   | { type: 'DISMISS_LEVEL_UP'; muscleId: MuscleGroupId }
 
   // ── Settings ───────────────────────────────────────────────────────────────
   | { type: 'SET_WEIGHT_UNIT'; unit: WeightUnit }
-  | { type: 'ADD_BODY_ENTRY'; entry: Omit<BodyEntry, 'id'> }
+  | { type: 'LOAD_BODY_ENTRIES'; entries: BodyEntry[] }
+  | { type: 'ADD_BODY_ENTRY'; entry: BodyEntry }
+  | { type: 'UPDATE_BODY_ENTRY'; entry: BodyEntry }
+  | { type: 'DELETE_BODY_ENTRY'; id: string }
   | { type: 'ADD_CUSTOM_EXERCISE'; exercise: Exercise }
+  | { type: 'UPDATE_EXERCISE'; exercise: Exercise }
+  | { type: 'REMOVE_EXERCISE_LIBRARY'; exerciseId: string }
   | { type: 'CLEAR_LAST_COMPLETED' }

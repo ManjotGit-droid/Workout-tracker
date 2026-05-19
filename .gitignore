@@ -3,4 +3,5 @@ dist
 dist-ssr
 *.local
 .DS_Store
-data/
+# legacy SQLite data dir (root only) — leave src/data alone
+/data/

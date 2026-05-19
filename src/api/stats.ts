@@ -1,5 +1,5 @@
 import { getDB } from '../db'
-import type { MuscleXpRecord } from '../db/schema'
+import type { MuscleXpRecord, SetRecord, WorkoutExerciseRecord } from '../db/schema'
 
 export interface MuscleXpRow extends MuscleXpRecord {}
 
@@ -25,20 +25,20 @@ export interface VolumeRow {
   workouts: number
 }
 
-export async function fetchMuscleXp(): Promise<Record<string, MuscleXpRow>> {
+export const fetchMuscleXp = async (): Promise<Record<string, MuscleXpRow>> => {
   const db = await getDB()
   const rows = await db.getAll('muscle_xp')
   return Object.fromEntries(rows.map((r) => [r.muscle_id, r]))
 }
 
-export async function fetchSummary(): Promise<StatsSummary> {
+export const fetchSummary = async (): Promise<StatsSummary> => {
   const db = await getDB()
   const allWorkouts = await db.getAll('workouts')
   const completed = allWorkouts.filter((w) => w.completed)
 
   const totalWorkouts = completed.length
   const lastWorkout = completed.length > 0
-    ? completed.reduce((a, b) => (a.end_time ?? 0) > (b.end_time ?? 0) ? a : b)
+    ? completed.reduce((a, b) => ((a.end_time ?? 0) > (b.end_time ?? 0) ? a : b))
     : null
 
   // Streak: consecutive days with a completed workout
@@ -47,14 +47,17 @@ export async function fetchSummary(): Promise<StatsSummary> {
   if (dates.length > 0) {
     const today = new Date().toISOString().slice(0, 10)
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-    let cur = (dates[0] === today || dates[0] === yesterday) ? dates[0] : null
+    let cur = dates[0] === today || dates[0] === yesterday ? dates[0] : null
     if (cur) {
       streak = 1
       for (let i = 1; i < dates.length; i++) {
         const d = new Date(cur)
         d.setDate(d.getDate() - 1)
         const expected = d.toISOString().slice(0, 10)
-        if (dates[i] === expected) { streak++; cur = expected } else break
+        if (dates[i] === expected) {
+          streak++
+          cur = expected
+        } else break
       }
     }
   }
@@ -62,10 +65,10 @@ export async function fetchSummary(): Promise<StatsSummary> {
   // Weekly volume
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
   let weeklyVolume = 0
-  for (const w of completed.filter((w) => w.date >= weekAgo)) {
+  for (const w of completed.filter((x) => x.date >= weekAgo)) {
     for (const we of w.exercises) {
-      for (const s of we.sets.filter((s: import('../db/schema').SetRecord) => s.completed && s.weight && s.reps)) {
-        weeklyVolume += (s.weight! * s.reps!)
+      for (const s of we.sets.filter((x: SetRecord) => x.completed && x.weight && x.reps)) {
+        weeklyVolume += (s.weight ?? 0) * (s.reps ?? 0)
       }
     }
   }
@@ -75,12 +78,12 @@ export async function fetchSummary(): Promise<StatsSummary> {
   const exercises = await db.getAll('exercises')
   const exMap = new Map(exercises.map((e) => [e.id, e]))
   const muscleFreq: Record<string, { type: string; freq: number }> = {}
-  for (const w of completed.filter((w) => w.date >= monthAgo)) {
+  for (const w of completed.filter((x) => x.date >= monthAgo)) {
     for (const we of w.exercises) {
       const ex = exMap.get(we.exercise_id)
       if (!ex) continue
       for (const m of ex.muscles) {
-        if (!muscleFreq[m.muscle_id]) muscleFreq[m.muscle_id] = { type: m.type, freq: 0 }
+        muscleFreq[m.muscle_id] ??= { type: m.type, freq: 0 }
         muscleFreq[m.muscle_id].freq++
       }
     }
@@ -92,24 +95,34 @@ export async function fetchSummary(): Promise<StatsSummary> {
 
   return {
     totalWorkouts,
-    lastWorkout: lastWorkout ? { id: lastWorkout.id, date: lastWorkout.date, start_time: lastWorkout.start_time, end_time: lastWorkout.end_time, notes: lastWorkout.notes } : null,
+    lastWorkout: lastWorkout
+      ? {
+          id: lastWorkout.id,
+          date: lastWorkout.date,
+          start_time: lastWorkout.start_time,
+          end_time: lastWorkout.end_time,
+          notes: lastWorkout.notes,
+        }
+      : null,
     streak,
     weeklyVolume: Math.round(weeklyVolume),
     topMuscles,
   }
 }
 
-export async function fetchPRs(): Promise<PrRow[]> {
+export const fetchPRs = async (): Promise<PrRow[]> => {
   const db = await getDB()
   const completed = (await db.getAll('workouts')).filter((w) => w.completed)
   const best: Record<string, PrRow> = {}
   for (const w of completed) {
     for (const we of w.exercises) {
-      for (const s of we.sets.filter((s: import('../db/schema').SetRecord) => s.completed && s.weight && s.reps)) {
-        const orm = s.weight! * (1 + s.reps! / 30)
+      for (const s of we.sets.filter((x: SetRecord) => x.completed && x.weight && x.reps)) {
+        const reps = s.reps ?? 0
+        const weight = s.weight ?? 0
+        const orm = weight * (1 + reps / 30)
         const existing = best[we.exercise_id]
         if (!existing || orm > existing.orm) {
-          best[we.exercise_id] = { exercise_id: we.exercise_id, reps: s.reps!, weight: s.weight!, date: w.date, orm }
+          best[we.exercise_id] = { exercise_id: we.exercise_id, reps, weight, date: w.date, orm }
         }
       }
     }
@@ -117,17 +130,17 @@ export async function fetchPRs(): Promise<PrRow[]> {
   return Object.values(best)
 }
 
-export async function fetchVolume(days = 30): Promise<VolumeRow[]> {
+export const fetchVolume = async (days = 30): Promise<VolumeRow[]> => {
   const db = await getDB()
   const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10)
   const completed = (await db.getAll('workouts')).filter((w) => w.completed && w.date >= since)
   const byDate: Record<string, { volume: number; workouts: number }> = {}
   for (const w of completed) {
-    if (!byDate[w.date]) byDate[w.date] = { volume: 0, workouts: 0 }
+    byDate[w.date] ??= { volume: 0, workouts: 0 }
     byDate[w.date].workouts++
     for (const we of w.exercises) {
-      for (const s of we.sets.filter((s: import('../db/schema').SetRecord) => s.completed && s.weight && s.reps)) {
-        byDate[w.date].volume += s.weight! * s.reps!
+      for (const s of we.sets.filter((x: SetRecord) => x.completed && x.weight && x.reps)) {
+        byDate[w.date].volume += (s.weight ?? 0) * (s.reps ?? 0)
       }
     }
   }
@@ -136,12 +149,12 @@ export async function fetchVolume(days = 30): Promise<VolumeRow[]> {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-export async function fetchExerciseHistory(exerciseId: string) {
+export const fetchExerciseHistory = async (exerciseId: string) => {
   const db = await getDB()
   const completed = (await db.getAll('workouts')).filter((w) => w.completed)
   const rows: { date: string; reps: number | null; weight: number | null; duration: number | null; distance: number | null }[] = []
   for (const w of completed.sort((a, b) => a.date.localeCompare(b.date))) {
-    for (const we of w.exercises.filter((e: import('../db/schema').WorkoutExerciseRecord) => e.exercise_id === exerciseId)) {
+    for (const we of w.exercises.filter((e: WorkoutExerciseRecord) => e.exercise_id === exerciseId)) {
       for (const s of we.sets) {
         rows.push({ date: w.date, reps: s.reps, weight: s.weight, duration: s.duration, distance: s.distance })
       }

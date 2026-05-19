@@ -10,7 +10,7 @@ import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { formatDate } from '../utils/formatters'
 import type { MuscleGroupId } from '../types'
 
-export function Dashboard() {
+export const Dashboard = () => {
   const { state } = useAppStore()
   const navigate = useNavigate()
   const { profile, activeWorkout } = state
@@ -97,7 +97,7 @@ export function Dashboard() {
             onClick={() => navigate('/workout')}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-              <path d="M6 6h2M16 6h2M8 6v3a4 4 0 0 0 8 0V6M4 9h2M18 9h2M4 9v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 9v6M7 6v12M17 6v12M20 9v6M7 12h10" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Start Workout
           </GlowButton>
@@ -190,7 +190,7 @@ export function Dashboard() {
   )
 }
 
-function getLevelFill(level: number): string {
+const getLevelFill = (level: number): string => {
   if (level < 3)  return '#2d1a3d'
   if (level < 5)  return '#4a1a7a'
   if (level < 10) return '#6b21a8'
@@ -202,7 +202,7 @@ function getLevelFill(level: number): string {
   return '#f59e0b'
 }
 
-function getLevelGlow(level: number): string {
+const getLevelGlow = (level: number): string => {
   if (level < 3)  return '#4a1060'
   if (level < 5)  return '#6a2090'
   if (level < 10) return '#9333ea'

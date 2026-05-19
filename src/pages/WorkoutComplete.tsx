@@ -21,7 +21,7 @@ const item = {
   show: { x: 0, opacity: 1 },
 }
 
-export function WorkoutComplete() {
+export const WorkoutComplete = () => {
   const { state } = useAppStore()
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -54,7 +54,7 @@ export function WorkoutComplete() {
     return { muscleId, recs }
   })
 
-  function goHome() {
+  const goHome = () => {
     dispatch({ type: 'CLEAR_LAST_COMPLETED' })
     navigate('/')
   }

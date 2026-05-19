@@ -1,17 +1,17 @@
 import { getXPThreshold } from '../data/levelConfig'
 import type { WorkoutRecord, ExerciseRecord, MuscleXpRecord } from './schema'
 
-export function computeWorkoutXp(
+export const computeWorkoutXp = (
   workout: WorkoutRecord,
   exerciseMap: Map<string, ExerciseRecord>,
-): Record<string, number> {
+): Record<string, number> => {
   const muscleXp: Record<string, number> = {}
   for (const we of workout.exercises) {
     const exercise = exerciseMap.get(we.exercise_id)
     if (!exercise) continue
     let setXp = 0
-    for (const s of we.sets.filter((s) => s.completed)) {
-      if (s.reps)     setXp += s.reps * (s.weight ? 0.5 : 1)
+    for (const s of we.sets.filter((x) => x.completed)) {
+      if (s.reps) setXp += s.reps * (s.weight ? 0.5 : 1)
       if (s.duration) setXp += Math.floor(s.duration / 30) * 5
       if (s.distance) setXp += Math.floor(s.distance / 100) * 3
     }
@@ -23,7 +23,7 @@ export function computeWorkoutXp(
   return muscleXp
 }
 
-export function applyXpToRecord(record: MuscleXpRecord, gain: number): MuscleXpRecord {
+export const applyXpToRecord = (record: MuscleXpRecord, gain: number): MuscleXpRecord => {
   let { level, xp, xp_to_next } = record
   xp += gain
   while (xp >= xp_to_next) {

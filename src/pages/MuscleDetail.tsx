@@ -13,7 +13,7 @@ import { getLevelColor } from '../data/levelConfig'
 import { formatDate, fromKg } from '../utils/formatters'
 import type { MuscleGroupId } from '../types'
 
-export function MuscleDetail() {
+export const MuscleDetail = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { state } = useAppStore()

@@ -7,25 +7,29 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles = {
-  primary:   'bg-sl-purple text-white border border-sl-purple hover:bg-purple-700 shadow-neon-sm active:scale-95',
-  secondary: 'bg-sl-surface text-sl-text border border-sl-border hover:border-sl-purple/60 active:scale-95',
-  danger:    'bg-sl-danger/10 text-sl-danger border border-sl-danger/40 hover:bg-sl-danger/20 active:scale-95',
-  ghost:     'bg-transparent text-sl-muted border border-transparent hover:text-sl-text active:scale-95',
+  primary:   'bg-brand text-white hover:bg-brand-bright shadow-button',
+  secondary: 'bg-sunken text-text border border-border hover:border-text-muted',
+  danger:    'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20',
+  ghost:     'bg-transparent text-text-muted hover:text-text',
 }
 
 const sizeStyles = {
-  sm: 'px-3 py-1.5 text-xs',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base',
+  sm: 'px-3.5 py-1.5 text-[13px]',
+  md: 'px-4 py-2.5 text-[14px]',
+  lg: 'px-6 py-3 text-[16px]',
 }
 
-export function GlowButton({ children, variant = 'primary', size = 'md', className = '', ...props }: Props) {
-  return (
-    <button
-      className={`font-display font-semibold tracking-wide rounded-lg transition-all duration-150 flex items-center gap-2 justify-center disabled:opacity-40 disabled:cursor-not-allowed ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
-  )
-}
+export const GlowButton = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  className = '',
+  ...props
+}: Props) => (
+  <button
+    className={`app-btn flex items-center justify-center gap-2 ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+    {...props}
+  >
+    {children}
+  </button>
+)

@@ -1,11 +1,11 @@
 import type { LoggedExercise, MuscleGroupId } from '../types'
 import type { Exercise } from '../types'
 
-export function calculateXPForSet(
+export const calculateXPForSet = (
   reps: number,
   weightKg: number,
   muscleType: 'primary' | 'secondary',
-): number {
+): number => {
   const BASE_XP = 10
   const weightMultiplier = 1 + Math.log1p(weightKg / 10) * 0.8
   const repMultiplier = 0.5 + (reps / 10) * 0.7
@@ -13,10 +13,10 @@ export function calculateXPForSet(
   return Math.round(BASE_XP * weightMultiplier * repMultiplier * targetMultiplier)
 }
 
-export function calculateWorkoutXP(
+export const calculateWorkoutXP = (
   loggedExercises: LoggedExercise[],
   exerciseDb: Exercise[],
-): Partial<Record<MuscleGroupId, number>> {
+): Partial<Record<MuscleGroupId, number>> => {
   const xpMap: Partial<Record<MuscleGroupId, number>> = {}
 
   for (const loggedEx of loggedExercises) {

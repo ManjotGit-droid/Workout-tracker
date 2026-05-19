@@ -1,30 +1,47 @@
-import { getLevelColor } from '../../data/levelConfig'
+import { getMuscleTier, TIER_COLORS } from '../../data/levelConfig'
 
 interface Props {
   level: number
   size?: 'sm' | 'md' | 'lg'
+  /** Show the tier name under the level number (only for md/lg). */
+  showTierLabel?: boolean
 }
 
 const sizeMap = {
-  sm: { outer: 'w-8 h-8 text-sm', inner: 'text-xs' },
-  md: { outer: 'w-12 h-12 text-base', inner: 'text-xs' },
-  lg: { outer: 'w-16 h-16 text-xl', inner: 'text-sm' },
+  sm: { outer: 'w-9 h-9 text-[13px]', label: 'text-[8px]' },
+  md: { outer: 'w-12 h-12 text-[16px]', label: 'text-[9px]' },
+  lg: { outer: 'w-16 h-16 text-[22px]', label: 'text-[10px]' },
 }
 
-export function LevelBadge({ level, size = 'md' }: Props) {
-  const { fill, glow } = getLevelColor(level)
-  const { outer } = sizeMap[size]
+/**
+ * A square tier badge inspired by the Solo-Leveling rank icons.  The badge
+ * shows the muscle level and is coloured by tier (Bronze → Mythic).
+ */
+export const LevelBadge = ({ level, size = 'md', showTierLabel = false }: Props) => {
+  const tier = getMuscleTier(level)
+  const colors = TIER_COLORS[tier]
+  const { outer, label } = sizeMap[size]
+
+  // Notch corners (top-left, bottom-right) — game-style polygon
+  const clip = 'polygon(18% 0, 100% 0, 100% 82%, 82% 100%, 0 100%, 0 18%)'
 
   return (
     <div
-      className={`${outer} rounded-full flex items-center justify-center font-mono font-bold text-white border-2 flex-shrink-0`}
+      className={`${outer} flex flex-col items-center justify-center font-bold text-white flex-shrink-0 relative`}
       style={{
-        backgroundColor: fill,
-        borderColor: glow || fill,
-        boxShadow: glow ? `0 0 10px ${glow}` : 'none',
+        background: colors.gradient,
+        clipPath: clip,
+        WebkitClipPath: clip,
+        boxShadow: `0 0 12px ${colors.glow}80`,
       }}
+      aria-label={`Level ${level} (${tier})`}
     >
-      {level}
+      <span className="font-mono leading-none tabular-nums" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>{level}</span>
+      {showTierLabel && (
+        <span className={`${label} font-mono tracking-widest uppercase mt-0.5 opacity-90`}>
+          {tier}
+        </span>
+      )}
     </div>
   )
 }

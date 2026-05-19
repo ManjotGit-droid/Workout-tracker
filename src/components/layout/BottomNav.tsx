@@ -6,8 +6,8 @@ const tabs = [
     to: '/',
     label: 'Home',
     icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[22px] h-[22px]">
+        <path d="M3 12l9-9 9 9M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -15,8 +15,19 @@ const tabs = [
     to: '/workout',
     label: 'Train',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-        <path d="M6 6h2M16 6h2M8 6v3a4 4 0 0 0 8 0V6M4 9h2M18 9h2M4 9v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9" strokeLinecap="round" strokeLinejoin="round" />
+      // Dumbbell: two weight stacks bracketing a central bar
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[22px] h-[22px]">
+        <path d="M4 9v6M7 6v12M17 6v12M20 9v6M7 12h10" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    to: '/plans',
+    label: 'Plans',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[22px] h-[22px]">
+        <rect x="4" y="3" width="16" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9 8h6M9 12h6M9 16h4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -24,8 +35,9 @@ const tabs = [
     to: '/exercises',
     label: 'Library',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 12h6M9 16h4" strokeLinecap="round" strokeLinejoin="round" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[22px] h-[22px]">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20v-13H6.5A2.5 2.5 0 0 0 4 6.5v13z" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 22H20" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -33,21 +45,22 @@ const tabs = [
     to: '/progress',
     label: 'Progress',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" strokeLinecap="round" strokeLinejoin="round" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[22px] h-[22px]">
+        <path d="M3 17l6-6 4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M14 7h7v7" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
 ]
 
-export function BottomNav() {
+export const BottomNav = () => {
   const location = useLocation()
   const { state } = useAppStore()
   const hasActiveWorkout = !!state.activeWorkout
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-sl-bg border-t border-sl-border safe-bottom">
-      <div className="flex">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-elevated/85 backdrop-blur-xl border-t border-border safe-bottom theme-fade">
+      <div className="flex max-w-md mx-auto">
         {tabs.map((tab) => {
           const isActive = tab.to === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.to)
           const isWorkout = tab.to === '/workout'
@@ -56,19 +69,21 @@ export function BottomNav() {
             <NavLink
               key={tab.to}
               to={tab.to}
-              className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-mono transition-colors relative ${
-                isActive ? 'text-sl-purple' : 'text-sl-muted hover:text-sl-text'
+              className={`flex-1 flex flex-col items-center gap-0.5 pt-2.5 pb-2 transition-colors relative ${
+                isActive ? 'text-brand glow-text-soft' : 'text-text-muted hover:text-text-soft'
               }`}
             >
               <div className="relative">
-                {tab.icon}
+                <div style={{ filter: isActive ? 'drop-shadow(0 0 6px var(--brand))' : 'none' }}>
+                  {tab.icon}
+                </div>
                 {isWorkout && hasActiveWorkout && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-sl-purple rounded-full animate-pulse" />
+                  <span className="absolute -top-0.5 -right-1 w-2 h-2 bg-brand rounded-full pulse-glow" />
                 )}
               </div>
-              <span className="text-[10px] uppercase tracking-wider">{tab.label}</span>
+              <span className="text-[10px] font-medium tracking-tight">{tab.label}</span>
               {isActive && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-sl-purple rounded-full" />
+                <span className="absolute top-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand rounded-full" style={{ boxShadow: '0 0 8px var(--brand)' }} />
               )}
             </NavLink>
           )

@@ -7,23 +7,34 @@ import { WorkoutComplete } from './pages/WorkoutComplete'
 import { MuscleDetail } from './pages/MuscleDetail'
 import { ExerciseLibrary } from './pages/ExerciseLibrary'
 import { Progress } from './pages/Progress'
+import { WorkoutPlans } from './pages/WorkoutPlans'
+import { Users } from './pages/Users'
+import { ThemeProvider } from './store/ThemeContext'
+import { UserProvider } from './store/UserContext'
 
-export function App() {
-  return (
-    <AppProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route index element={<Dashboard />} />
-            <Route path="workout" element={<WorkoutActive />} />
-            <Route path="workout/complete" element={<WorkoutComplete />} />
-            <Route path="muscles/:id" element={<MuscleDetail />} />
-            <Route path="exercises" element={<ExerciseLibrary />} />
-            <Route path="progress" element={<Progress />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AppProvider>
+export const App = () => (
+    <ThemeProvider>
+      {/* UserProvider sits above AppProvider so changing the active user
+          reloads the page, which causes AppProvider to remount and rehydrate
+          from the new user's IndexedDB. */}
+      <UserProvider>
+        <AppProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route element={<AppShell />}>
+                <Route index element={<Dashboard />} />
+                <Route path="workout" element={<WorkoutActive />} />
+                <Route path="workout/complete" element={<WorkoutComplete />} />
+                <Route path="muscles/:id" element={<MuscleDetail />} />
+                <Route path="exercises" element={<ExerciseLibrary />} />
+                <Route path="plans" element={<WorkoutPlans />} />
+                <Route path="progress" element={<Progress />} />
+                <Route path="users" element={<Users />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </AppProvider>
+      </UserProvider>
+    </ThemeProvider>
   )
-}

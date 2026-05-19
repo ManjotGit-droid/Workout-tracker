@@ -70,6 +70,11 @@ export interface WorkoutSession {
   exercises: LoggedExercise[]
   completed: boolean
   xpGained: Partial<Record<MuscleGroupId, number>>
+  // Pause state: pausedAt is the timestamp the user paused (or null when running).
+  // pausedDuration is the total ms accumulated across past pauses — used so the
+  // timer shows real "active" elapsed time minus the time the user was paused.
+  pausedAt?: number | null
+  pausedDuration?: number
 }
 
 export interface MuscleGroupState {
@@ -107,8 +112,37 @@ export interface PersonalRecord {
 export interface BodyEntry {
   id: string
   date: string
+
+  // ── Composition ──────────────────────────────────────────────
   weightKg?: number
   bodyFatPct?: number
+  heightCm?: number       // usually set once, used for BMI
+
+  // ── Circumference measurements (cm) ──────────────────────────
+  neckCm?: number
+  shouldersCm?: number
+  chestCm?: number
+  leftArmCm?: number      // flexed bicep
+  rightArmCm?: number
+  leftForearmCm?: number
+  rightForearmCm?: number
+  waistCm?: number
+  hipsCm?: number
+  leftThighCm?: number
+  rightThighCm?: number
+  leftCalfCm?: number
+  rightCalfCm?: number
+
+  // ── Recovery / wellness ──────────────────────────────────────
+  restingHrBpm?: number
+  sleepHours?: number
+  energyLevel?: number    // 1–10
+  moodLevel?: number      // 1–10
+  sorenessLevel?: number  // 1–10
+  hydrationL?: number     // litres
+  stepsCount?: number
+
+  notes?: string
 }
 
 export interface AppState {

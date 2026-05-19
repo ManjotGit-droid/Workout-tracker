@@ -1,7 +1,7 @@
 import type { Rank, UserProfile } from '../types'
 import { RANK_THRESHOLDS, RANK_ORDER } from '../data/levelConfig'
 
-export function calculateRank(profile: UserProfile): Rank {
+export const calculateRank = (profile: UserProfile): Rank => {
   const levels = Object.values(profile.muscleGroups).map((m) => m.level)
   if (levels.length === 0) return 'E'
   const avg = levels.reduce((a, b) => a + b, 0) / levels.length
@@ -13,12 +13,12 @@ export function calculateRank(profile: UserProfile): Rank {
   return rank
 }
 
-export function xpToDisplay(xp: number, threshold: number): string {
+export const xpToDisplay = (xp: number, threshold: number): string => {
   if (threshold === 0) return '∞'
   return `${xp} / ${threshold}`
 }
 
-export function xpPercent(xp: number, threshold: number): number {
+export const xpPercent = (xp: number, threshold: number): number => {
   if (threshold === 0) return 100
   return Math.min(100, Math.round((xp / threshold) * 100))
 }

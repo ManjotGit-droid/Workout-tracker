@@ -3,14 +3,10 @@ import type { AppAction } from './actions'
 import { calculateRank } from '../utils/rankCalculator'
 import { getXPThreshold } from '../data/levelConfig'
 
-function uid(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
-}
-
-function applyXP(
+const applyXP = (
   muscleState: MuscleGroupState,
   xpGain: number,
-): { updated: MuscleGroupState; levelUps: number } {
+): { updated: MuscleGroupState; levelUps: number } => {
   let { level, xp, xpToNextLevel } = muscleState
   let levelUps = 0
   xp += xpGain
@@ -25,7 +21,7 @@ function applyXP(
   return { updated: { ...muscleState, level, xp, xpToNextLevel }, levelUps }
 }
 
-export function appReducer(state: AppState, action: AppAction): AppState {
+export const appReducer = (state: AppState, action: AppAction): AppState => {
   switch (action.type) {
     // ── API-backed startup actions ──────────────────────────────────────────
 
@@ -207,6 +203,26 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'DISCARD_WORKOUT':
       return { ...state, activeWorkout: null }
 
+    case 'PAUSE_WORKOUT': {
+      if (!state.activeWorkout) return state
+      return {
+        ...state,
+        activeWorkout: { ...state.activeWorkout, pausedAt: action.pausedAt },
+      }
+    }
+
+    case 'RESUME_WORKOUT': {
+      if (!state.activeWorkout) return state
+      return {
+        ...state,
+        activeWorkout: {
+          ...state.activeWorkout,
+          pausedAt: null,
+          pausedDuration: action.pausedDuration,
+        },
+      }
+    }
+
     case 'DISMISS_LEVEL_UP':
       return {
         ...state,
@@ -216,16 +232,51 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_WEIGHT_UNIT':
       return { ...state, weightUnit: action.unit }
 
+    case 'LOAD_BODY_ENTRIES':
+      return { ...state, bodyLog: action.entries }
+
     case 'ADD_BODY_ENTRY':
       return {
         ...state,
-        bodyLog: [{ ...action.entry, id: uid() }, ...state.bodyLog].slice(0, 500),
+        bodyLog: [action.entry, ...state.bodyLog]
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .slice(0, 500),
+      }
+
+    case 'UPDATE_BODY_ENTRY':
+      return {
+        ...state,
+        bodyLog: state.bodyLog
+          .map((e) => (e.id === action.entry.id ? action.entry : e))
+          .sort((a, b) => b.date.localeCompare(a.date)),
+      }
+
+    case 'DELETE_BODY_ENTRY':
+      return {
+        ...state,
+        bodyLog: state.bodyLog.filter((e) => e.id !== action.id),
       }
 
     case 'ADD_CUSTOM_EXERCISE':
       return {
         ...state,
-        customExercises: [...state.customExercises, action.exercise],
+        customExercises: [...state.customExercises, action.exercise].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        ),
+      }
+
+    case 'UPDATE_EXERCISE':
+      return {
+        ...state,
+        customExercises: state.customExercises
+          .map((ex) => (ex.id === action.exercise.id ? action.exercise : ex))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      }
+
+    case 'REMOVE_EXERCISE_LIBRARY':
+      return {
+        ...state,
+        customExercises: state.customExercises.filter((ex) => ex.id !== action.exerciseId),
       }
 
     case 'CLEAR_LAST_COMPLETED':

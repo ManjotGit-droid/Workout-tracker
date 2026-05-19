@@ -1,7 +1,14 @@
 import { useState, useRef } from 'react'
+import {
+  isAutoBackupEnabled,
+  setAutoBackupEnabled,
+  getLastBackupAt,
+  daysUntilNextBackup,
+  runBackupNow,
+} from '../utils/autoBackup'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useAppStore, useDispatch } from '../store/AppContext'
+import { useAppStore } from '../store/AppContext'
 import { exportData, importData, resetData } from '../api/data'
 import { PageHeader } from '../components/layout/PageHeader'
 import { NeonCard } from '../components/ui/NeonCard'
@@ -11,22 +18,56 @@ import { XPBar } from '../components/progression/XPBar'
 import { MUSCLE_GROUPS, MUSCLE_GROUP_IDS } from '../data/muscleGroups'
 
 import { getLevelColor } from '../data/levelConfig'
-import { fromKg, formatDate, todayISO } from '../utils/formatters'
+import { fromKg, formatDate } from '../utils/formatters'
 import { RankBadge } from '../components/progression/RankBadge'
+import { BodyTab } from '../components/body/BodyTab'
 
 type Tab = 'muscles' | 'records' | 'body' | 'data'
 
-export function Progress() {
+export const Progress = () => {
   const { state } = useAppStore()
-  const dispatch = useDispatch()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('muscles')
-  const [bodyWeight, setBodyWeight] = useState('')
-  const [bodyFat, setBodyFat] = useState('')
-  const [bodyDate, setBodyDate] = useState(todayISO())
   const [dataMsg, setDataMsg] = useState('')
   const [resetting, setResetting] = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
+  const [autoBackup, setAutoBackup] = useState<boolean>(() => isAutoBackupEnabled())
+  const [lastBackupAt, setLastBackupAt] = useState<number | null>(() => getLastBackupAt())
+  const [backupRunning, setBackupRunning] = useState(false)
+
+  const handleToggleAutoBackup = () => {
+    const next = !autoBackup
+    setAutoBackupEnabled(next)
+    setAutoBackup(next)
+  }
+
+  const handleBackupNow = async () => {
+    if (backupRunning) return
+    setBackupRunning(true)
+    try {
+      await runBackupNow()
+      setLastBackupAt(getLastBackupAt())
+      setDataMsg('Backup saved')
+    } catch {
+      setDataMsg('Backup failed')
+    } finally {
+      setBackupRunning(false)
+    }
+  }
+
+  const lastBackupLabel = lastBackupAt
+    ? new Date(lastBackupAt).toLocaleDateString()
+    : 'Never'
+  const nextBackupLabel = autoBackup
+    ? lastBackupAt === null
+      ? 'Due now'
+      : (() => {
+          const d = daysUntilNextBackup()
+          if (d <= 0) return 'Due now'
+          if (d === 1) return 'In 1 day'
+          return `In ${d} days`
+        })()
+    : 'Off'
 
   const allExercises = state.customExercises
 
@@ -34,25 +75,6 @@ export function Progress() {
   const sortedMuscles = MUSCLE_GROUP_IDS
     .map((id) => state.profile.muscleGroups[id])
     .sort((a, b) => b.level - a.level)
-
-  function addBodyEntry() {
-    const wKg = parseFloat(bodyWeight)
-    const fat = parseFloat(bodyFat)
-    if (!isNaN(wKg) || !isNaN(fat)) {
-      dispatch({
-        type: 'ADD_BODY_ENTRY',
-        entry: {
-          date: bodyDate,
-          weightKg: isNaN(wKg) ? undefined : wKg,
-          bodyFatPct: isNaN(fat) ? undefined : fat,
-        },
-      })
-      setBodyWeight('')
-      setBodyFat('')
-    }
-  }
-
-  const latestBody = state.bodyLog[0]
 
   return (
     <div className="min-h-screen">
@@ -178,103 +200,7 @@ export function Progress() {
         )}
 
         {/* ── BODY TAB ── */}
-        {tab === 'body' && (
-          <div>
-            {/* Latest snapshot */}
-            {latestBody && (
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {latestBody.weightKg !== undefined && (
-                  <NeonCard className="p-3 text-center">
-                    <div className="text-2xl font-mono font-bold text-sl-blue">
-                      {fromKg(latestBody.weightKg, state.weightUnit).toFixed(1)}
-                      <span className="text-sm text-sl-muted ml-1">{state.weightUnit}</span>
-                    </div>
-                    <div className="text-xs font-mono text-sl-muted uppercase mt-0.5">Body Weight</div>
-                    <div className="text-xs font-mono text-sl-muted mt-0.5">{formatDate(latestBody.date)}</div>
-                  </NeonCard>
-                )}
-                {latestBody.bodyFatPct !== undefined && (
-                  <NeonCard className="p-3 text-center">
-                    <div className="text-2xl font-mono font-bold text-sl-purple">
-                      {latestBody.bodyFatPct.toFixed(1)}%
-                    </div>
-                    <div className="text-xs font-mono text-sl-muted uppercase mt-0.5">Body Fat</div>
-                    <div className="text-xs font-mono text-sl-muted mt-0.5">{formatDate(latestBody.date)}</div>
-                  </NeonCard>
-                )}
-              </div>
-            )}
-
-            {/* Log new entry */}
-            <NeonCard className="p-3 mb-4" glow="purple">
-              <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-3">Log Body Stats</div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                  <label className="text-xs font-mono text-sl-muted block mb-1">
-                    Weight ({state.weightUnit})
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={bodyWeight}
-                    onChange={(e) => setBodyWeight(e.target.value)}
-                    placeholder="0.0"
-                    className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-mono text-sl-muted block mb-1">Body Fat %</label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={bodyFat}
-                    onChange={(e) => setBodyFat(e.target.value)}
-                    placeholder="0.0"
-                    className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple"
-                  />
-                </div>
-              </div>
-              <div className="mb-3">
-                <label className="text-xs font-mono text-sl-muted block mb-1">Date</label>
-                <input
-                  type="date"
-                  value={bodyDate}
-                  onChange={(e) => setBodyDate(e.target.value)}
-                  className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple"
-                />
-              </div>
-              <GlowButton className="w-full" onClick={addBodyEntry}>
-                Log Entry
-              </GlowButton>
-            </NeonCard>
-
-            {/* History */}
-            {state.bodyLog.length > 0 && (
-              <div>
-                <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">History</div>
-                <div className="flex flex-col gap-1.5">
-                  {state.bodyLog.slice(0, 20).map((entry) => (
-                    <NeonCard key={entry.id} className="px-3 py-2 flex items-center justify-between">
-                      <span className="text-xs font-mono text-sl-muted">{formatDate(entry.date)}</span>
-                      <div className="flex gap-4">
-                        {entry.weightKg !== undefined && (
-                          <span className="text-sm font-mono text-sl-blue">
-                            {fromKg(entry.weightKg, state.weightUnit).toFixed(1)} {state.weightUnit}
-                          </span>
-                        )}
-                        {entry.bodyFatPct !== undefined && (
-                          <span className="text-sm font-mono text-sl-purple">
-                            {entry.bodyFatPct.toFixed(1)}%
-                          </span>
-                        )}
-                      </div>
-                    </NeonCard>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {tab === 'body' && <BodyTab />}
         {/* Data Management Tab */}
         {tab === 'data' && (
           <div className="flex flex-col gap-4">
@@ -283,6 +209,45 @@ export function Progress() {
               <p className="text-xs font-mono text-sl-muted mb-3">Download all your workouts and exercises as a JSON backup.</p>
               <GlowButton size="sm" variant="secondary" onClick={() => exportData().catch(() => setDataMsg('Export failed'))}>
                 Download Backup
+              </GlowButton>
+            </NeonCard>
+
+            <NeonCard className="p-4">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex-1">
+                  <h3 className="text-sm font-display font-bold mb-1">Monthly Auto-Backup</h3>
+                  <p className="text-xs font-mono text-sl-muted leading-relaxed">
+                    A banner appears every 30 days asking you to save a fresh backup. One tap and it downloads — keeps your data safe across phone wipes or app reinstalls.
+                  </p>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={autoBackup}
+                  aria-label="Toggle monthly auto-backup"
+                  onClick={handleToggleAutoBackup}
+                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+                    autoBackup ? 'bg-brand' : 'bg-sunken border border-border'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                      autoBackup ? 'translate-x-5' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-sl-muted mt-3 mb-3">
+                <div>
+                  <div className="text-text-muted/70 uppercase tracking-wider text-[9px]">Last backup</div>
+                  <div className="text-text">{lastBackupLabel}</div>
+                </div>
+                <div>
+                  <div className="text-text-muted/70 uppercase tracking-wider text-[9px]">Next due</div>
+                  <div className="text-text">{nextBackupLabel}</div>
+                </div>
+              </div>
+              <GlowButton size="sm" variant="secondary" disabled={backupRunning} onClick={handleBackupNow}>
+                {backupRunning ? 'Saving…' : 'Backup now'}
               </GlowButton>
             </NeonCard>
 

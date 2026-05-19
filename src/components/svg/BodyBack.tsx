@@ -13,141 +13,187 @@ interface Props {
   onMuscleClick?: (id: MuscleGroupId) => void
 }
 
-const SILHOUETTE_BACK = `M 100 18
-  C 92 18, 85 22, 82 28
-  C 79 34, 79 42, 82 48
-  C 78 50, 72 54, 68 62
-  C 62 74, 60 88, 58 102
-  C 56 114, 55 122, 54 132
-  C 52 142, 50 155, 50 168
-  C 50 180, 51 192, 52 202
-  C 53 212, 54 218, 54 226
-  L 40 228
-  C 36 228, 33 232, 33 236
-  C 33 260, 35 290, 38 308
-  C 40 318, 43 324, 46 330
-  C 48 334, 50 338, 50 344
-  C 50 358, 49 372, 48 384
-  C 47 392, 46 398, 46 404
-  L 58 404
-  C 59 398, 60 392, 61 384
-  C 62 372, 63 358, 64 344
-  C 64 338, 66 334, 68 330
-  L 72 322
-  L 75 336
-  C 76 342, 77 350, 78 358
-  C 79 368, 79 380, 79 390
-  C 79 396, 79 400, 79 404
-  L 92 404
-  C 92 398, 92 392, 91 384
-  C 90 372, 89 360, 90 348
-  C 91 338, 93 330, 95 320
-  C 97 310, 99 302, 100 294
-  C 101 302, 103 310, 105 320
-  C 107 330, 109 338, 110 348
-  C 111 360, 110 372, 109 384
-  C 108 392, 108 398, 108 404
-  L 121 404
-  C 121 400, 121 396, 121 390
-  C 121 380, 121 368, 122 358
-  C 123 350, 124 342, 125 336
-  L 128 322
-  L 132 330
-  C 134 334, 136 338, 136 344
-  C 136 358, 137 372, 138 384
-  C 139 392, 140 398, 141 404
-  L 154 404
-  C 154 398, 153 392, 152 384
-  C 151 372, 150 358, 150 344
-  C 150 338, 152 334, 154 330
-  C 157 324, 160 318, 162 308
-  C 165 290, 167 260, 167 236
-  C 167 232, 164 228, 160 228
-  L 146 226
-  C 146 218, 147 212, 148 202
-  C 149 192, 150 180, 150 168
-  C 150 155, 148 142, 146 132
-  C 145 122, 144 114, 142 102
-  C 140 88, 138 74, 132 62
-  C 128 54, 122 50, 118 48
-  C 121 42, 121 34, 118 28
-  C 115 22, 108 18, 100 18 Z`
+/*
+ * Back-view anatomical polygons — same source and license as the front view
+ * (react-body-highlighter, MIT).  Shares the silhouette path with the front
+ * view for visual consistency.
+ */
 
-export function BodyBack({ colors, activated = new Set(), interactive = false, onMuscleClick }: Props) {
+const SKIN = 'var(--body-skin)'
+const LINE = 'var(--body-line)'
+const OUTLINE = 'var(--body-outline)'
+
+const poly = (s: string) => {
+  const nums = s.trim().split(/\s+/)
+  let d = `M ${nums[0]} ${nums[1]}`
+  for (let i = 2; i < nums.length; i += 2) d += ` L ${nums[i]} ${nums[i + 1]}`
+  return d + ' Z'
+}
+const combine = (...polys: string[]) => polys.map(poly).join(' ')
+
+export const BodyBack = ({
+  colors,
+  activated = new Set(),
+  interactive = false,
+  onMuscleClick,
+}: Props) => {
   const click = (id: MuscleGroupId) => () => onMuscleClick?.(id)
   const act = (svgId: string) => activated.has(svgId)
 
   return (
-    <svg viewBox="0 0 200 420" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
-      {/* Body silhouette base */}
-      <path d={SILHOUETTE_BACK} fill="#111120" />
+    <svg
+      viewBox="0 0 100 220"
+      xmlns="http://www.w3.org/2000/svg"
+      className="body-svg body-svg--back"
+      style={{ width: '100%', height: 'auto', display: 'block' }}
+    >
+      {/* Head (back of — kept; not part of the body outline) */}
+      <ellipse cx="50" cy="11.5" rx="9.5" ry="11" className="body-decoration body-decoration--head" fill={SKIN} stroke={OUTLINE} strokeWidth="0.7" />
 
-      {/* ── TRAPS ── */}
-      <MuscleRegion id="trap-l" d="M 82 50 C 76 52, 70 58, 68 66 C 66 72, 68 80, 74 82 C 80 78, 86 72, 90 64 C 88 56, 85 50, 82 50 Z"
-        fill={colors.traps.fill} glow={colors.traps.glow} isActivated={act('trap-l')} isInteractive={interactive} onClick={click('traps')} />
-      <MuscleRegion id="trap-r" d="M 118 50 C 115 50, 112 56, 110 64 C 114 72, 120 78, 126 82 C 132 80, 134 72, 132 66 C 130 58, 124 52, 118 50 Z"
-        fill={colors.traps.fill} glow={colors.traps.glow} isActivated={act('trap-r')} isInteractive={interactive} onClick={click('traps')} />
+      {/* Spine line */}
+      <path className="body-anatomy-line body-anatomy-line--spine" d="M 50 25 L 50 102" stroke={LINE} strokeWidth="0.4" opacity="0.5" fill="none" />
 
-      {/* ── REAR DELTS ── */}
-      <MuscleRegion id="rear-delt-l" d="M 62 68 C 56 66, 50 70, 48 78 C 46 84, 48 90, 54 92 C 60 88, 66 80, 68 72 C 66 70, 64 68, 62 68 Z"
-        fill={colors.rear_delts.fill} glow={colors.rear_delts.glow} isActivated={act('rear-delt-l')} isInteractive={interactive} onClick={click('rear_delts')} />
-      <MuscleRegion id="rear-delt-r" d="M 138 68 C 136 68, 134 70, 132 72 C 134 80, 140 88, 146 92 C 152 90, 154 84, 152 78 C 150 70, 144 66, 138 68 Z"
-        fill={colors.rear_delts.fill} glow={colors.rear_delts.glow} isActivated={act('rear-delt-r')} isInteractive={interactive} onClick={click('rear_delts')} />
+      {/* ── TRAPS (upper back) ──────────────────────────────────────── */}
+      <MuscleRegion id="trap-l"
+        d={poly('44.6808511 21.7021277 47.6595745 21.7021277 47.2340426 38.2978723 47.6595745 50 38.2978723 53.1914894 35.3191489 40.8510638 31.0638298 36.5957447 39.1489362 33.1914894 43.8297872 27.2340426')}
+        fill={colors.traps.fill} glow={colors.traps.glow}
+        isActivated={act('trap-l')} isInteractive={interactive} onClick={click('traps')} />
+      <MuscleRegion id="trap-r"
+        d={poly('52.3404255 21.7021277 55.7446809 21.7021277 56.5957447 27.2340426 60.8510638 32.7659574 68.9361702 36.5957447 64.6808511 40.4255319 61.7021277 50 52.3404255 53.1914894 53.1914894 38.2978723')}
+        fill={colors.traps.fill} glow={colors.traps.glow}
+        isActivated={act('trap-r')} isInteractive={interactive} onClick={click('traps')} />
 
-      {/* ── SIDE DELTS (back view) ── */}
-      <MuscleRegion id="side-delt-back-l" d="M 44 80 C 40 80, 38 86, 39 94 C 40 100, 44 104, 50 104 C 52 96, 50 86, 48 78 Z"
-        fill={colors.side_delts.fill} glow={colors.side_delts.glow} isActivated={act('side-delt-back-l')} isInteractive={interactive} onClick={click('side_delts')} />
-      <MuscleRegion id="side-delt-back-r" d="M 156 80 C 152 78, 150 86, 150 104 C 156 104, 160 100, 161 94 C 162 86, 160 80, 156 80 Z"
-        fill={colors.side_delts.fill} glow={colors.side_delts.glow} isActivated={act('side-delt-back-r')} isInteractive={interactive} onClick={click('side_delts')} />
+      {/* ── REAR DELTOIDS ───────────────────────────────────────────── */}
+      <MuscleRegion id="rear-delt-l"
+        d={poly('29.3617021 37.0212766 22.9787234 39.1489362 17.4468085 44.2553191 18.2978723 53.6170213 24.2553191 49.3617021 27.2340426 46.3829787')}
+        fill={colors.rear_delts.fill} glow={colors.rear_delts.glow}
+        isActivated={act('rear-delt-l')} isInteractive={interactive} onClick={click('rear_delts')} />
+      <MuscleRegion id="rear-delt-r"
+        d={poly('71.0638298 37.0212766 78.2978723 39.5744681 82.5531915 44.6808511 81.7021277 53.6170213 74.893617 48.9361702 72.3404255 45.106383')}
+        fill={colors.rear_delts.fill} glow={colors.rear_delts.glow}
+        isActivated={act('rear-delt-r')} isInteractive={interactive} onClick={click('rear_delts')} />
 
-      {/* ── RHOMBOIDS ── */}
-      <MuscleRegion id="rhomboid-l" d="M 75 84 C 72 88, 70 96, 71 106 C 72 114, 76 120, 84 122 C 90 120, 95 114, 96 106 C 96 96, 94 86, 90 80 C 84 78, 78 80, 75 84 Z"
-        fill={colors.rhomboids.fill} glow={colors.rhomboids.glow} isActivated={act('rhomboid-l')} isInteractive={interactive} onClick={click('rhomboids')} />
-      <MuscleRegion id="rhomboid-r" d="M 125 84 C 122 80, 116 78, 110 80 C 106 86, 104 96, 104 106 C 105 114, 110 120, 116 122 C 124 120, 128 114, 129 106 C 130 96, 128 88, 125 84 Z"
-        fill={colors.rhomboids.fill} glow={colors.rhomboids.glow} isActivated={act('rhomboid-r')} isInteractive={interactive} onClick={click('rhomboids')} />
+      {/* ── SIDE DELTS (outer cap, back view) ──────────────────────── */}
+      <MuscleRegion id="side-delt-back-l"
+        d="M 17 44 C 14 46, 14 52, 16 56 C 18 58, 20 56, 20 54 L 20 47 Z"
+        fill={colors.side_delts.fill} glow={colors.side_delts.glow}
+        isActivated={act('side-delt-back-l')} isInteractive={interactive} onClick={click('side_delts')} />
+      <MuscleRegion id="side-delt-back-r"
+        d="M 83 44 C 86 46, 86 52, 84 56 C 82 58, 80 56, 80 54 L 80 47 Z"
+        fill={colors.side_delts.fill} glow={colors.side_delts.glow}
+        isActivated={act('side-delt-back-r')} isInteractive={interactive} onClick={click('side_delts')} />
 
-      {/* ── LATS ── */}
-      <MuscleRegion id="lat-l" d="M 56 96 C 52 102, 52 116, 54 130 C 56 142, 60 152, 66 158 C 72 162, 78 162, 82 158 C 84 150, 83 138, 80 124 C 78 112, 74 100, 68 92 C 62 88, 58 90, 56 96 Z"
-        fill={colors.lats.fill} glow={colors.lats.glow} isActivated={act('lat-l')} isInteractive={interactive} onClick={click('lats')} />
-      <MuscleRegion id="lat-r" d="M 144 96 C 142 90, 138 88, 132 92 C 126 100, 122 112, 120 124 C 117 138, 116 150, 118 158 C 122 162, 128 162, 134 158 C 140 152, 144 142, 146 130 C 148 116, 148 102, 144 96 Z"
-        fill={colors.lats.fill} glow={colors.lats.glow} isActivated={act('lat-r')} isInteractive={interactive} onClick={click('lats')} />
+      {/* ── RHOMBOIDS (top portion of upper-back source polygon) ───── */}
+      <MuscleRegion id="rhomboid-l"
+        d="M 33.6 41.3 L 31 49 L 28.5 49 L 36.6 54 L 47.2 55 L 47.2 50 L 36.6 54 Z"
+        fill={colors.rhomboids.fill} glow={colors.rhomboids.glow}
+        isActivated={act('rhomboid-l')} isInteractive={interactive} onClick={click('rhomboids')} />
+      <MuscleRegion id="rhomboid-r"
+        d="M 66.4 41.7 L 69 49 L 71.5 49 L 63.4 54 L 52.7 55 L 52.7 50 L 63.4 54 Z"
+        fill={colors.rhomboids.fill} glow={colors.rhomboids.glow}
+        isActivated={act('rhomboid-r')} isInteractive={interactive} onClick={click('rhomboids')} />
 
-      {/* ── LOWER BACK ── */}
-      <MuscleRegion id="lower-back" d="M 76 162 C 74 170, 74 180, 76 190 C 78 198, 84 204, 100 206 C 116 204, 122 198, 124 190 C 126 180, 126 170, 124 162 C 116 158, 84 158, 76 162 Z"
-        fill={colors.lower_back.fill} glow={colors.lower_back.glow} isActivated={act('lower-back')} isInteractive={interactive} onClick={click('lower_back')} />
+      {/* ── LATS (lower portion of upper-back source polygon) ──────── */}
+      <MuscleRegion id="lat-l"
+        d="M 28.5 49 L 28.5 55 L 34 75 L 47.2 71 L 47.2 55 L 36.6 54 Z"
+        fill={colors.lats.fill} glow={colors.lats.glow}
+        isActivated={act('lat-l')} isInteractive={interactive} onClick={click('lats')} />
+      <MuscleRegion id="lat-r"
+        d="M 71.5 49 L 71.5 55 L 66 75 L 52.7 71 L 52.7 55 L 63.4 54 Z"
+        fill={colors.lats.fill} glow={colors.lats.glow}
+        isActivated={act('lat-r')} isInteractive={interactive} onClick={click('lats')} />
 
-      {/* ── TRICEPS ── */}
-      <MuscleRegion id="tricep-l" d="M 40 96 C 36 100, 34 112, 36 126 C 38 136, 44 144, 50 144 C 54 140, 56 132, 56 122 C 56 110, 54 98, 50 92 C 45 88, 42 90, 40 96 Z"
-        fill={colors.triceps.fill} glow={colors.triceps.glow} isActivated={act('tricep-l')} isInteractive={interactive} onClick={click('triceps')} />
-      <MuscleRegion id="tricep-r" d="M 160 96 C 158 90, 155 88, 150 92 C 146 98, 144 110, 144 122 C 144 132, 146 140, 150 144 C 156 144, 162 136, 164 126 C 166 112, 164 100, 160 96 Z"
-        fill={colors.triceps.fill} glow={colors.triceps.glow} isActivated={act('tricep-r')} isInteractive={interactive} onClick={click('triceps')} />
+      {/* ── LOWER BACK / ERECTORS ──────────────────────────────────── */}
+      <MuscleRegion id="lower-back"
+        d={combine(
+          '47.6595745 72.7659574 34.4680851 77.0212766 35.3191489 83.4042553 49.3617021 102.12766 46.8085106 82.9787234',
+          '52.3404255 72.7659574 65.5319149 77.0212766 64.6808511 83.4042553 50.6382979 102.12766 53.1914894 83.8297872',
+        )}
+        fill={colors.lower_back.fill} glow={colors.lower_back.glow}
+        isActivated={act('lower-back')} isInteractive={interactive} onClick={click('lower_back')} />
 
-      {/* ── FOREARMS (back) ── */}
-      <MuscleRegion id="forearm-back-l" d="M 34 148 C 32 156, 32 168, 34 180 C 36 188, 40 194, 44 194 C 48 192, 50 186, 50 178 C 50 166, 48 154, 44 146 C 40 144, 36 145, 34 148 Z"
-        fill={colors.forearms.fill} glow={colors.forearms.glow} isActivated={act('forearm-back-l')} isInteractive={interactive} onClick={click('forearms')} />
-      <MuscleRegion id="forearm-back-r" d="M 166 148 C 164 145, 160 144, 156 146 C 152 154, 150 166, 150 178 C 150 186, 152 192, 156 194 C 160 194, 164 188, 166 180 C 168 168, 168 156, 166 148 Z"
-        fill={colors.forearms.fill} glow={colors.forearms.glow} isActivated={act('forearm-back-r')} isInteractive={interactive} onClick={click('forearms')} />
+      {/* ── TRICEPS ─────────────────────────────────────────────────── */}
+      <MuscleRegion id="tricep-l"
+        d={combine(
+          '26.8085106 49.787234 17.8723404 55.7446809 14.4680851 72.3404255 16.5957447 81.7021277 21.7021277 63.8297872 26.8085106 55.7446809',
+          '26.8085106 58.2978723 26.8085106 68.5106383 22.9787234 75.3191489 19.1489362 77.4468085 22.5531915 65.5319149',
+        )}
+        fill={colors.triceps.fill} glow={colors.triceps.glow}
+        isActivated={act('tricep-l')} isInteractive={interactive} onClick={click('triceps')} />
+      <MuscleRegion id="tricep-r"
+        d={combine(
+          '73.6170213 50.212766 82.1276596 55.7446809 85.9574468 73.1914894 83.4042553 82.1276596 77.8723404 62.9787234 73.1914894 55.7446809',
+          '72.7659574 58.2978723 77.0212766 64.6808511 80.4255319 77.4468085 76.5957447 75.3191489 72.7659574 68.9361702',
+        )}
+        fill={colors.triceps.fill} glow={colors.triceps.glow}
+        isActivated={act('tricep-r')} isInteractive={interactive} onClick={click('triceps')} />
 
-      {/* ── GLUTES ── */}
-      <MuscleRegion id="glute-l" d="M 55 210 C 52 218, 51 230, 53 242 C 55 252, 62 260, 72 260 C 82 258, 88 250, 90 240 C 90 228, 86 216, 78 208 C 70 202, 60 204, 55 210 Z"
-        fill={colors.glutes.fill} glow={colors.glutes.glow} isActivated={act('glute-l')} isInteractive={interactive} onClick={click('glutes')} />
-      <MuscleRegion id="glute-r" d="M 145 210 C 140 204, 130 202, 122 208 C 114 216, 110 228, 110 240 C 112 250, 118 258, 128 260 C 138 260, 145 252, 147 242 C 149 230, 148 218, 145 210 Z"
-        fill={colors.glutes.fill} glow={colors.glutes.glow} isActivated={act('glute-r')} isInteractive={interactive} onClick={click('glutes')} />
+      {/* ── FOREARMS (back) ─────────────────────────────────────────── */}
+      <MuscleRegion id="forearm-back-l"
+        d={combine(
+          '13.6170213 75.7446809 8.93617021 83.8297872 6.80851064 93.6170213 0 106.382979 3.82978723 104.255319 12.3404255 88.5106383 15.7446809 82.9787234',
+          '18.7234043 79.5744681 22.1276596 77.8723404 20.8510638 84.2553191 9.36170213 102.978723 6.80851064 108.510638 5.10638298 104.680851',
+        )}
+        fill={colors.forearms.fill} glow={colors.forearms.glow}
+        isActivated={act('forearm-back-l')} isInteractive={interactive} onClick={click('forearms')} />
+      <MuscleRegion id="forearm-back-r"
+        d={combine(
+          '86.3829787 75.7446809 91.0638298 83.4042553 93.1914894 94.0425532 100 106.382979 96.1702128 104.255319 88.0851064 89.3617021 84.2553191 83.8297872',
+          '81.2765957 79.5744681 77.4468085 77.8723404 79.1489362 84.6808511 91.0638298 103.829787 93.1914894 108.93617 94.4680851 104.680851',
+        )}
+        fill={colors.forearms.fill} glow={colors.forearms.glow}
+        isActivated={act('forearm-back-r')} isInteractive={interactive} onClick={click('forearms')} />
 
-      {/* ── HAMSTRINGS ── */}
-      <MuscleRegion id="ham-l" d="M 54 264 C 50 272, 48 286, 48 300 C 48 312, 52 322, 58 326 C 64 328, 70 324, 74 316 C 78 306, 80 292, 80 278 C 80 266, 78 256, 74 252 C 68 248, 58 254, 54 264 Z"
-        fill={colors.hamstrings.fill} glow={colors.hamstrings.glow} isActivated={act('ham-l')} isInteractive={interactive} onClick={click('hamstrings')} />
-      <MuscleRegion id="ham-r" d="M 146 264 C 142 254, 132 248, 126 252 C 122 256, 120 266, 120 278 C 120 292, 122 306, 126 316 C 130 324, 136 328, 142 326 C 148 322, 152 312, 152 300 C 152 286, 150 272, 146 264 Z"
-        fill={colors.hamstrings.fill} glow={colors.hamstrings.glow} isActivated={act('ham-r')} isInteractive={interactive} onClick={click('hamstrings')} />
+      {/* ── GLUTES ──────────────────────────────────────────────────── */}
+      <MuscleRegion id="glute-l"
+        d={poly('44.6808511 99.5744681 30.212766 108.510638 29.787234 118.723404 31.4893617 125.957447 47.2340426 121.276596 49.3617021 114.893617')}
+        fill={colors.glutes.fill} glow={colors.glutes.glow}
+        isActivated={act('glute-l')} isInteractive={interactive} onClick={click('glutes')} />
+      <MuscleRegion id="glute-r"
+        d={poly('55.3191489 99.1489362 51.0638298 114.468085 52.3404255 120.851064 68.0851064 125.957447 69.787234 119.148936 69.3617021 108.510638')}
+        fill={colors.glutes.fill} glow={colors.glutes.glow}
+        isActivated={act('glute-r')} isInteractive={interactive} onClick={click('glutes')} />
 
-      {/* ── CALVES (back) ── */}
-      <MuscleRegion id="calf-back-l" d="M 54 330 C 52 340, 52 354, 54 368 C 56 380, 60 390, 65 394 C 68 396, 72 394, 74 390 C 76 382, 76 368, 74 354 C 72 340, 68 328, 62 326 C 58 326, 55 327, 54 330 Z"
-        fill={colors.calves.fill} glow={colors.calves.glow} isActivated={act('calf-back-l')} isInteractive={interactive} onClick={click('calves')} />
-      <MuscleRegion id="calf-back-r" d="M 146 330 C 145 327, 142 326, 138 326 C 132 328, 128 340, 126 354 C 124 368, 124 382, 126 390 C 128 394, 132 396, 135 394 C 140 390, 144 380, 146 368 C 148 354, 148 340, 146 330 Z"
-        fill={colors.calves.fill} glow={colors.calves.glow} isActivated={act('calf-back-r')} isInteractive={interactive} onClick={click('calves')} />
+      {/* ── HAMSTRINGS ──────────────────────────────────────────────── */}
+      <MuscleRegion id="ham-l"
+        d={combine(
+          '28.9361702 122.12766 31.0638298 129.361702 36.5957447 125.957447 35.3191489 135.319149 34.4680851 150.212766 29.3617021 158.297872 28.9361702 146.808511 27.6595745 141.276596 27.2340426 131.489362',
+          '38.7234043 125.531915 44.2553191 145.957447 40.4255319 166.808511 36.1702128 152.765957 37.0212766 135.319149',
+        )}
+        fill={colors.hamstrings.fill} glow={colors.hamstrings.glow}
+        isActivated={act('ham-l')} isInteractive={interactive} onClick={click('hamstrings')} />
+      <MuscleRegion id="ham-r"
+        d={combine(
+          '71.4893617 121.702128 69.3617021 128.93617 63.8297872 125.957447 65.5319149 136.595745 66.3829787 150.212766 71.0638298 158.297872 71.4893617 147.659574 72.7659574 142.12766 73.6170213 131.914894',
+          '61.7021277 125.531915 63.4042553 136.170213 64.2553191 153.191489 60 166.808511 56.1702128 146.382979',
+        )}
+        fill={colors.hamstrings.fill} glow={colors.hamstrings.glow}
+        isActivated={act('ham-r')} isInteractive={interactive} onClick={click('hamstrings')} />
 
-      {/* Body outline stroke */}
-      <path d={SILHOUETTE_BACK} fill="none" stroke="#2a2a4a" strokeWidth="1" />
+      {/* Knees */}
+      <g className="body-decoration body-decoration--knees" fill={LINE} opacity="0.5">
+        <ellipse className="body-decoration body-decoration--knee" cx="34" cy="160" rx="4" ry="2" />
+        <ellipse className="body-decoration body-decoration--knee" cx="66" cy="160" rx="4" ry="2" />
+      </g>
+
+      {/* ── CALVES + SOLEUS (back) ──────────────────────────────────── */}
+      <MuscleRegion id="calf-back-l"
+        d={combine(
+          '29.3617021 160.425532 28.5106383 167.234043 24.6808511 179.574468 23.8297872 192.765957 25.5319149 197.021277 28.5106383 193.191489 29.787234 180 31.9148936 171.06383 31.9148936 166.808511',
+          '37.4468085 165.106383 35.3191489 167.659574 33.1914894 171.914894 31.0638298 180.425532 30.212766 191.914894 34.0425532 200 38.7234043 190.638298 39.1489362 168.93617',
+          '28.5106383 195.744681 30.212766 195.744681 33.6170213 201.702128 30.6382979 220 28.5106383 213.617021 26.8085106 198.297872',
+        )}
+        fill={colors.calves.fill} glow={colors.calves.glow}
+        isActivated={act('calf-back-l')} isInteractive={interactive} onClick={click('calves')} />
+      <MuscleRegion id="calf-back-r"
+        d={combine(
+          '70.6382979 160.425532 72.3404255 168.510638 75.7446809 179.148936 76.5957447 192.765957 74.4680851 196.595745 72.3404255 193.617021 70.6382979 179.574468 68.0851064 168.085106',
+          '62.9787234 165.106383 61.2765957 168.510638 61.7021277 190.638298 66.3829787 199.574468 70.6382979 191.914894 68.9361702 179.574468 66.8085106 170.212766',
+          '69.787234 195.744681 71.9148936 195.744681 73.6170213 198.297872 71.9148936 213.191489 70.212766 219.574468 67.2340426 202.12766',
+        )}
+        fill={colors.calves.fill} glow={colors.calves.glow}
+        isActivated={act('calf-back-r')} isInteractive={interactive} onClick={click('calves')} />
+
     </svg>
   )
 }

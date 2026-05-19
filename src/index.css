@@ -2,51 +2,258 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
+/* ============================================================
+   THEME TOKENS — Vibrant Neon Light Blue
+   ============================================================ */
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg:           #f3f8ff;      /* very light blue tint */
+  --bg-elevated:  #ffffff;
+  --bg-sunken:    #e6efff;
+  --surface:      #ffffff;
+  --border:       #c9deff;
+  --border-soft:  #dbe9ff;
+  --separator:    rgba(0, 120, 255, 0.10);
+
+  --text:         #0b1b35;
+  --text-soft:    #1f3a5f;
+  --text-muted:   #5b78a3;
+  --text-faint:   #a4bcdd;
+
+  --accent:       #00d4ff;      /* neon cyan */
+  --accent-ink:   #001930;
+  --accent-soft:  rgba(0, 212, 255, 0.18);
+
+  --brand:        #00b5ff;      /* electric light blue */
+  --brand-soft:   rgba(0, 181, 255, 0.14);
+  --brand-bright: #38d6ff;
+
+  --gold:         #f59e0b;
+  --danger:       #ff3366;
+  --success:      #22c55e;
+
+  --shadow-card:   0 1px 2px rgba(0, 80, 200, 0.06), 0 4px 16px rgba(0, 120, 255, 0.08);
+  --shadow-modal:  0 12px 48px rgba(0, 80, 200, 0.18);
+  --shadow-button: 0 1px 2px rgba(0, 80, 200, 0.10);
+  --glow-brand:    0 0 14px rgba(0, 181, 255, 0.55), 0 0 32px rgba(0, 181, 255, 0.25);
+  --glow-accent:   0 0 14px rgba(0, 212, 255, 0.6), 0 0 36px rgba(0, 212, 255, 0.3);
+
+  /* Body diagram colours */
+  --body-skin:    #d6e4f5;   /* silhouette fill */
+  --body-muscle:  #a8c0e0;   /* default muscle fill */
+  --body-line:    #6b89b3;   /* anatomical definition strokes */
+  --body-outline: #4a6b96;   /* outer silhouette outline */
 }
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg:           #05080f;      /* deep blue-black */
+  --bg-elevated:  #0d1322;
+  --bg-sunken:    #060a13;
+  --surface:      #101729;
+  --border:       #1c2741;
+  --border-soft:  #141c30;
+  --separator:    rgba(0, 200, 255, 0.18);
+
+  --text:         #e8f4ff;
+  --text-soft:    #b0c8e6;
+  --text-muted:   #6b8bb5;
+  --text-faint:   #3a5278;
+
+  --accent:       #00f5ff;      /* hot cyan, dark mode pop */
+  --accent-ink:   #000814;
+  --accent-soft:  rgba(0, 245, 255, 0.18);
+
+  --brand:        #00d4ff;
+  --brand-soft:   rgba(0, 212, 255, 0.20);
+  --brand-bright: #6ee7ff;
+
+  --gold:         #fbbf24;
+  --danger:       #ff4d6d;
+  --success:      #22ee99;
+
+  --shadow-card:   0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 24px rgba(0, 150, 255, 0.10);
+  --shadow-modal:  0 16px 60px rgba(0, 0, 0, 0.65);
+  --shadow-button: 0 1px 4px rgba(0, 150, 255, 0.30);
+  --glow-brand:    0 0 18px rgba(0, 212, 255, 0.65), 0 0 44px rgba(0, 212, 255, 0.30);
+  --glow-accent:   0 0 22px rgba(0, 245, 255, 0.75), 0 0 50px rgba(0, 245, 255, 0.35);
+
+  /* Body diagram colours — dark theme */
+  --body-skin:    #1b2740;   /* silhouette fill */
+  --body-muscle:  #2e4267;   /* default muscle fill */
+  --body-line:    #4a6090;   /* anatomical definition strokes */
+  --body-outline: #6080b0;   /* outer silhouette outline */
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+* { -webkit-tap-highlight-color: transparent; }
 
 body {
-  background-color: #090910;
-  color: #e2e8f0;
-  font-family: 'Rajdhani', 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
   -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: transparent;
+  -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
+  letter-spacing: -0.01em;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-html, body, #root {
-  min-height: 100%;
+/* Subtle blue radial vibe in the background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 181, 255, 0.08), transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(0, 245, 255, 0.06), transparent 55%);
 }
 
-/* Prevent scroll bounce on iOS */
+html, body, #root { min-height: 100%; }
 html { overscroll-behavior: none; }
 
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: #0f0f1a; }
-::-webkit-scrollbar-thumb { background: #4a1a7a; border-radius: 2px; }
+::selection { background: var(--accent); color: var(--accent-ink); }
 
-/* Hide scrollbar but keep scrolling */
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--text-faint); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 
-/* Safe area for notched phones */
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0);
-}
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
+.safe-top    { padding-top: env(safe-area-inset-top, 0); }
 
-/* Number inputs — remove spinner */
 input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(var(--invert-cal, 0)); }
+:root[data-theme="dark"] { --invert-cal: 0.9; }
+
+.theme-fade {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
-/* Date input color fix */
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.6);
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+
+/* Card — with optional neon ring on hover */
+.app-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+.app-card:hover { border-color: var(--brand-soft); }
+.app-card-pressable:active { transform: scale(0.985); }
+
+/* Button — vibrant brand */
+.app-btn {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border-radius: 12px;
+  transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.app-btn:active { transform: scale(0.97); }
+.app-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.app-btn-primary {
+  background: var(--brand);
+  color: var(--accent-ink);
+  box-shadow: var(--glow-brand);
+}
+.app-btn-primary:hover {
+  background: var(--brand-bright);
+  box-shadow: var(--glow-brand);
+}
+
+.app-btn-secondary {
+  background: var(--bg-sunken);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.app-btn-secondary:hover { border-color: var(--brand); }
+
+/* Glow ring utility */
+.glow-ring {
+  box-shadow: var(--glow-brand);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  background: rgba(0, 5, 20, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.3s ease both; }
+
+@keyframes shimmerSlide {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(400%); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.4); }
+  50%      { box-shadow: 0 0 24px rgba(0, 212, 255, 0.8), 0 0 48px rgba(0, 212, 255, 0.35); }
+}
+.pulse-glow { animation: pulseGlow 1.8s ease-in-out infinite; }
+
+@keyframes textGlowPulse {
+  0%, 100% { text-shadow: 0 0 6px rgba(0, 212, 255, 0.4); }
+  50%      { text-shadow: 0 0 12px rgba(0, 212, 255, 0.7), 0 0 24px rgba(0, 212, 255, 0.35); }
+}
+.text-pulse-glow { animation: textGlowPulse 2.4s ease-in-out infinite; }
+
+/* ── Glow utilities ──────────────────────────────────────────────────── */
+
+.glow-text-brand {
+  text-shadow: 0 0 8px var(--brand), 0 0 18px rgba(0, 181, 255, 0.35);
+}
+.glow-text-accent {
+  text-shadow: 0 0 8px var(--accent), 0 0 22px rgba(0, 245, 255, 0.4);
+}
+.glow-text-soft {
+  text-shadow: 0 0 6px rgba(0, 212, 255, 0.25);
+}
+
+.glow-border-brand {
+  box-shadow: inset 0 0 0 1px var(--brand), 0 0 14px rgba(0, 212, 255, 0.35);
+}
+
+.glow-ring-brand {
+  box-shadow: 0 0 18px rgba(0, 212, 255, 0.55), 0 0 44px rgba(0, 212, 255, 0.25);
+}
+
+/* Animated gradient sheen for hero numbers (rank, level, big stats) */
+@keyframes sheenSlide {
+  0%   { background-position: -200% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.text-sheen {
+  background: linear-gradient(90deg, var(--brand), var(--accent), var(--brand));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: sheenSlide 5s linear infinite;
+  text-shadow: 0 0 14px rgba(0, 212, 255, 0.35);
 }

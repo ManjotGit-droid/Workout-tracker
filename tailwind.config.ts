@@ -2,24 +2,49 @@ import type { Config } from 'tailwindcss'
 
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  darkMode: ['class', '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
+        // ── Apple-minimalist tokens (preferred for new code) ──────────────
+        bg:          'var(--bg)',
+        elevated:    'var(--bg-elevated)',
+        sunken:      'var(--bg-sunken)',
+        surface:     'var(--surface)',
+        border:      'var(--border)',
+        'border-soft': 'var(--border-soft)',
+        separator:   'var(--separator)',
+
+        text:        'var(--text)',
+        'text-soft': 'var(--text-soft)',
+        'text-muted':'var(--text-muted)',
+        'text-faint':'var(--text-faint)',
+
+        accent:      'var(--accent)',
+        'accent-ink': 'var(--accent-ink)',
+        brand:       'var(--brand)',
+        'brand-bright': 'var(--brand-bright)',
+        gold:        'var(--gold)',
+        danger:      'var(--danger)',
+        success:     'var(--success)',
+
+        // ── Legacy sl-* tokens — now mapped to theme variables ────────────
+        // Keeps existing class names working without rewriting every file.
         sl: {
-          bg: '#090910',
-          surface: '#0f0f1a',
-          border: '#1a1a2e',
-          purple: '#9333ea',
-          'purple-dim': '#4a1a7a',
-          'purple-bright': '#c084fc',
-          blue: '#3b82f6',
-          'blue-dim': '#1e3a5f',
-          gold: '#f59e0b',
-          'gold-bright': '#fde68a',
-          text: '#e2e8f0',
-          muted: '#64748b',
-          danger: '#ef4444',
-          success: '#22c55e',
+          bg:        'var(--bg)',
+          surface:   'var(--bg-elevated)',
+          border:    'var(--border)',
+          purple:    'var(--brand)',
+          'purple-dim':    'var(--brand-soft)',
+          'purple-bright': 'var(--brand-bright)',
+          blue:      'var(--brand)',
+          'blue-dim':'var(--brand-soft)',
+          gold:      'var(--gold)',
+          'gold-bright': 'var(--accent)',
+          text:      'var(--text)',
+          muted:     'var(--text-muted)',
+          danger:    'var(--danger)',
+          success:   'var(--success)',
         },
       },
       animation: {
@@ -30,32 +55,49 @@ export default {
       },
       keyframes: {
         glowPulse: {
-          '0%, 100%': { filter: 'drop-shadow(0 0 4px #9333ea)' },
-          '50%': { filter: 'drop-shadow(0 0 18px #9333ea) drop-shadow(0 0 35px #9333ea)' },
+          '0%, 100%': { filter: 'drop-shadow(0 0 2px var(--brand))' },
+          '50%':      { filter: 'drop-shadow(0 0 10px var(--brand))' },
         },
         rankAppear: {
-          '0%': { transform: 'scale(0.5)', opacity: '0' },
-          '80%': { transform: 'scale(1.1)' },
+          '0%':   { transform: 'scale(0.5)', opacity: '0' },
+          '80%':  { transform: 'scale(1.05)' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
         floatIn: {
-          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '0%':   { transform: 'translateY(12px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
         shimmer: {
-          '0%': { backgroundPosition: '-200% 0' },
+          '0%':   { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
       },
       fontFamily: {
-        display: ['"Rajdhani"', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        // SF Pro / Inter — Apple-style sans
+        display: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"Inter"', 'system-ui', 'sans-serif'],
+        sans:    ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"Inter"', 'system-ui', 'sans-serif'],
+        mono:    ['"SF Mono"', 'ui-monospace', 'Menlo', 'monospace'],
+      },
+      borderRadius: {
+        DEFAULT: '10px',
+        lg: '14px',
+        xl: '18px',
+        '2xl': '22px',
+        '3xl': '28px',
       },
       boxShadow: {
-        'neon-purple': '0 0 12px #9333ea, 0 0 30px rgba(147,51,234,0.3)',
-        'neon-blue': '0 0 12px #3b82f6, 0 0 30px rgba(59,130,246,0.3)',
-        'neon-gold': '0 0 12px #f59e0b, 0 0 30px rgba(245,158,11,0.3)',
-        'neon-sm': '0 0 6px rgba(147,51,234,0.6)',
+        card:   'var(--shadow-card)',
+        modal:  'var(--shadow-modal)',
+        button: 'var(--shadow-button)',
+        // Legacy aliases mapped to subtle shadow (no neon glow)
+        'neon-purple': '0 0 0 1px var(--brand-soft)',
+        'neon-blue':   '0 0 0 1px var(--brand-soft)',
+        'neon-gold':   '0 0 0 1px rgba(217, 119, 6, 0.18)',
+        'neon-sm':     'var(--shadow-button)',
+      },
+      letterSpacing: {
+        tight: '-0.02em',
+        snug:  '-0.01em',
       },
     },
   },

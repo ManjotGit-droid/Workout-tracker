@@ -18,12 +18,11 @@ export const XP_THRESHOLDS: number[] = [
   55000,  // level 14 → 15
 ]
 
-export function getXPThreshold(level: number): number {
+export const getXPThreshold = (level: number): number => {
   if (level < XP_THRESHOLDS.length) return XP_THRESHOLDS[level]
-  // Beyond the table: scale by 1.4x each level
   let val = XP_THRESHOLDS[XP_THRESHOLDS.length - 1]
   for (let i = XP_THRESHOLDS.length; i <= level; i++) {
-    val = Math.round(val * 1.4 / 500) * 500
+    val = Math.round((val * 1.4) / 500) * 500
   }
   return val
 }
@@ -40,17 +39,78 @@ export const RANK_THRESHOLDS: Record<Rank, number> = {
 
 export const RANK_ORDER: Rank[] = ['E', 'D', 'C', 'B', 'A', 'S', 'SS']
 
+// Solo-Leveling-style rank colours.
+// E (green) → D (blue) → C (purple) → B (gold) → A (orange) → S (red) → SS (white-gold legendary)
 export const RANK_COLORS: Record<Rank, { text: string; border: string; glow: string; bg: string }> = {
-  E:  { text: '#9ca3af', border: '#6b7280', glow: '#4b5563',  bg: 'rgba(75,85,99,0.15)' },
-  D:  { text: '#a3e635', border: '#84cc16', glow: '#65a30d',  bg: 'rgba(101,163,13,0.15)' },
-  C:  { text: '#60a5fa', border: '#3b82f6', glow: '#2563eb',  bg: 'rgba(37,99,235,0.15)' },
-  B:  { text: '#818cf8', border: '#6366f1', glow: '#4f46e5',  bg: 'rgba(79,70,229,0.15)' },
-  A:  { text: '#c084fc', border: '#a855f7', glow: '#9333ea',  bg: 'rgba(147,51,234,0.15)' },
-  S:  { text: '#fbbf24', border: '#f59e0b', glow: '#d97706',  bg: 'rgba(217,119,6,0.15)' },
-  SS: { text: '#f9fafb', border: '#fde68a', glow: '#facc15',  bg: 'rgba(250,204,21,0.15)' },
+  E:  { text: '#4ade80', border: '#22c55e', glow: '#16a34a',  bg: 'rgba(34,197,94,0.15)'  },
+  D:  { text: '#60a5fa', border: '#3b82f6', glow: '#2563eb',  bg: 'rgba(59,130,246,0.15)' },
+  C:  { text: '#c084fc', border: '#a855f7', glow: '#9333ea',  bg: 'rgba(168,85,247,0.15)' },
+  B:  { text: '#fbbf24', border: '#f59e0b', glow: '#d97706',  bg: 'rgba(245,158,11,0.15)' },
+  A:  { text: '#fb923c', border: '#f97316', glow: '#ea580c',  bg: 'rgba(249,115,22,0.15)' },
+  S:  { text: '#f87171', border: '#ef4444', glow: '#dc2626',  bg: 'rgba(239,68,68,0.15)'  },
+  SS: { text: '#fef3c7', border: '#fbbf24', glow: '#f59e0b',  bg: 'rgba(251,191,36,0.20)' },
 }
 
-export function getLevelColor(level: number): { fill: string; glow: string } {
+// ── Muscle tier system ─────────────────────────────────────────────────────
+// Each muscle has a tier awarded by level: Bronze → Silver → Gold → Platinum →
+// Diamond → Mythic.  Tiers are independent of the player Rank — they apply to
+// individual muscle groups.
+
+export type MuscleTier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Mythic'
+
+// Ordered high → low so callers can do a top-down scan.
+export const MUSCLE_TIER_THRESHOLDS: { tier: MuscleTier; minLevel: number }[] = [
+  { tier: 'Mythic',   minLevel: 30 },
+  { tier: 'Diamond',  minLevel: 20 },
+  { tier: 'Platinum', minLevel: 13 },
+  { tier: 'Gold',     minLevel: 8  },
+  { tier: 'Silver',   minLevel: 4  },
+  { tier: 'Bronze',   minLevel: 1  },
+]
+
+export const getMuscleTier = (level: number): MuscleTier => {
+  for (const { tier, minLevel } of MUSCLE_TIER_THRESHOLDS) {
+    if (level >= minLevel) return tier
+  }
+  return 'Bronze'
+}
+
+export const TIER_COLORS: Record<MuscleTier, {
+  text: string; border: string; glow: string; bg: string; gradient: string
+}> = {
+  Bronze:   {
+    text: '#cd7f32', border: '#a0522d', glow: '#8b4513',
+    bg: 'rgba(205,127,50,0.14)',
+    gradient: 'linear-gradient(135deg, #d68a3c, #8b4513)',
+  },
+  Silver:   {
+    text: '#94a3b8', border: '#64748b', glow: '#475569',
+    bg: 'rgba(148,163,184,0.18)',
+    gradient: 'linear-gradient(135deg, #e2e8f0, #64748b)',
+  },
+  Gold:     {
+    text: '#fbbf24', border: '#f59e0b', glow: '#d97706',
+    bg: 'rgba(245,158,11,0.18)',
+    gradient: 'linear-gradient(135deg, #fde68a, #d97706)',
+  },
+  Platinum: {
+    text: '#22d3ee', border: '#0891b2', glow: '#06b6d4',
+    bg: 'rgba(34,211,238,0.18)',
+    gradient: 'linear-gradient(135deg, #a5f3fc, #06b6d4)',
+  },
+  Diamond:  {
+    text: '#a78bfa', border: '#8b5cf6', glow: '#7c3aed',
+    bg: 'rgba(167,139,250,0.20)',
+    gradient: 'linear-gradient(135deg, #ddd6fe, #7c3aed)',
+  },
+  Mythic:   {
+    text: '#f87171', border: '#ef4444', glow: '#dc2626',
+    bg: 'rgba(248,113,113,0.22)',
+    gradient: 'linear-gradient(135deg, #fecaca, #ef4444, #9333ea)',
+  },
+}
+
+export const getLevelColor = (level: number): { fill: string; glow: string } => {
   if (level <= 0) return { fill: '#1c1c2e', glow: '' }
   if (level < 3)  return { fill: '#2d1a3d', glow: '#4a1060' }
   if (level < 5)  return { fill: '#4a1a7a', glow: '#6a2090' }

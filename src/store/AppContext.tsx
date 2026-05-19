@@ -9,10 +9,11 @@ import { appReducer } from './reducer'
 import { MUSCLE_GROUP_IDS } from '../data/muscleGroups'
 import { getXPThreshold } from '../data/levelConfig'
 import { fetchExercises } from '../api/exercises'
-import { fetchWorkouts, createWorkout, addExerciseToWorkout, removeExerciseFromWorkout, logSet, updateSet, deleteSet, completeWorkout, deleteWorkout } from '../api/workouts'
+import { fetchWorkouts, createWorkout, addExerciseToWorkout, removeExerciseFromWorkout, logSet, updateSet, deleteSet, completeWorkout, deleteWorkout, pauseWorkout as apiPauseWorkout, resumeWorkout as apiResumeWorkout } from '../api/workouts'
 import { fetchMuscleXp } from '../api/stats'
+import { fetchBodyEntries } from '../api/body'
 
-function createDefaultState(): AppState {
+const createDefaultState = (): AppState => {
   const muscleGroups = Object.fromEntries(
     MUSCLE_GROUP_IDS.map((id) => [
       id,
@@ -57,11 +58,24 @@ interface ContextValue {
   removeSet: (loggedExerciseId: string, setId: string) => Promise<void>
   finishWorkout: () => Promise<void>
   discardWorkout: () => Promise<void>
+  pauseWorkout: () => Promise<void>
+  resumeWorkout: () => Promise<void>
+  startWorkoutFromPlan: (
+    exercises: Array<{
+      exerciseId: string
+      sets: number
+      reps?: number | 'AMRAP'
+      duration?: number
+      distance?: number
+      weight?: number
+    }>,
+    onProgress?: (done: number, total: number) => void,
+  ) => Promise<void>
 }
 
 const AppContext = createContext<ContextValue | null>(null)
 
-export function AppProvider({ children }: { children: ReactNode }) {
+export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(appReducer, undefined, createDefaultState)
   const [ready, setReady] = useState(false)
   // Track workout_exercise IDs: loggedExerciseId (frontend) → weId (DB / same value)
@@ -70,12 +84,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ── Load initial state from API ──────────────────────────────────────────
   useEffect(() => {
     let cancelled = false
-    async function init() {
+    const init = async () => {
       try {
-        const [exercises, workouts, muscleXpMap] = await Promise.all([
+        const [exercises, workouts, muscleXpMap, bodyEntries] = await Promise.all([
           fetchExercises(),
           fetchWorkouts(),
           fetchMuscleXp(),
+          fetchBodyEntries(),
         ])
 
         if (cancelled) return
@@ -86,6 +101,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Rebuild workoutHistory
         const completed = workouts.filter((w) => w.completed)
         dispatch({ type: 'LOAD_WORKOUTS', workouts: completed })
+
+        // Load body entries
+        dispatch({ type: 'LOAD_BODY_ENTRIES', entries: bodyEntries })
 
         // Reconstruct muscle XP from API
         const muscleGroups = { ...createDefaultState().profile.muscleGroups }
@@ -192,6 +210,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'FINISH_WORKOUT_WITH_XP', muscleXp: muscleXp as Partial<Record<MuscleGroupId, number>> })
   }, [])
 
+  const pauseWorkout = useCallback(async () => {
+    const wid = workoutIdRef.current
+    if (!wid) return
+    const updated = await apiPauseWorkout(wid)
+    if (updated.pausedAt) {
+      dispatch({ type: 'PAUSE_WORKOUT', pausedAt: updated.pausedAt })
+    }
+  }, [])
+
+  const resumeWorkout = useCallback(async () => {
+    const wid = workoutIdRef.current
+    if (!wid) return
+    const updated = await apiResumeWorkout(wid)
+    dispatch({ type: 'RESUME_WORKOUT', pausedDuration: updated.pausedDuration ?? 0 })
+  }, [])
+
   const discardWorkout = useCallback(async () => {
     const wid = workoutIdRef.current
     workoutIdRef.current = null
@@ -201,22 +235,89 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const startWorkoutFromPlan = useCallback(async (
+    planExercises: Array<{
+      exerciseId: string
+      sets: number
+      reps?: number | 'AMRAP'
+      duration?: number
+      distance?: number
+      weight?: number
+    }>,
+    onProgress?: (done: number, total: number) => void,
+  ) => {
+    // Total steps = 1 (create workout) + each (exercise + sets)
+    const totalSteps = 1 + planExercises.reduce((sum, e) => sum + 1 + e.sets, 0)
+    let done = 0
+    const tick = () => { done++; onProgress?.(done, totalSteps) }
+
+    // Discard any active workout first so we start clean
+    if (workoutIdRef.current) {
+      const oldId = workoutIdRef.current
+      workoutIdRef.current = null
+      dispatch({ type: 'DISCARD_WORKOUT' })
+      await deleteWorkout(oldId).catch(console.warn)
+    }
+
+    const workout = await createWorkout()
+    workoutIdRef.current = workout.id
+    dispatch({ type: 'RESTORE_WORKOUT', workout })
+    tick()
+
+    // Add each exercise sequentially, then pre-create the suggested sets (uncompleted)
+    for (const planEx of planExercises) {
+      const updated = await addExerciseToWorkout(workout.id, planEx.exerciseId)
+      const newWe = updated.exercises[updated.exercises.length - 1]
+      dispatch({ type: 'ADD_EXERCISE_WITH_ID', exerciseId: planEx.exerciseId, loggedExerciseId: newWe.id })
+      tick()
+
+      for (let i = 0; i < planEx.sets; i++) {
+        const setData: { reps?: number; weight?: number; duration?: number; distance?: number } = {}
+        // AMRAP gets logged as 0 reps so user can fill in actual count
+        if (planEx.reps === 'AMRAP') setData.reps = 0
+        else if (typeof planEx.reps === 'number') setData.reps = planEx.reps
+        if (planEx.duration !== undefined) setData.duration = planEx.duration
+        if (planEx.distance !== undefined) setData.distance = planEx.distance
+        if (planEx.weight !== undefined) setData.weight = planEx.weight
+
+        const s = await logSet(workout.id, newWe.id, setData)
+        dispatch({
+          type: 'LOG_SET_WITH_ID',
+          loggedExerciseId: newWe.id,
+          set: {
+            id: s.id,
+            reps: s.reps ?? undefined,
+            weight: s.weight ?? undefined,
+            duration: s.duration ?? undefined,
+            distance: s.distance ?? undefined,
+            completed: false,
+            notes: s.notes ?? undefined,
+            timestamp: s.timestamp,
+          },
+        })
+        tick()
+      }
+    }
+  }, [])
+
   const value: ContextValue = {
     state, dispatch, ready,
     startWorkout, addExercise, removeExercise,
     logNewSet, patchSet, removeSet, finishWorkout, discardWorkout,
+    pauseWorkout, resumeWorkout,
+    startWorkoutFromPlan,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
 
-export function useAppStore() {
+export const useAppStore = () => {
   const ctx = useContext(AppContext)
   if (!ctx) throw new Error('useAppStore must be used inside AppProvider')
   return ctx
 }
 
-export function useDispatch() {
+export const useDispatch = () => {
   const { dispatch } = useAppStore()
   return useCallback(dispatch, [dispatch])
 }
