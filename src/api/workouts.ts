@@ -78,12 +78,25 @@ export const fetchWorkout = async (id: string): Promise<WorkoutSession> => {
 
 // ── Create ────────────────────────────────────────────────────────────────────
 
-export const createWorkout = async (): Promise<WorkoutSession> => {
+const todayDate = (): string => new Date().toISOString().slice(0, 10)
+
+/**
+ * Create a workout. When `date` is omitted (or today's date), behaves normally:
+ * date = today, start_time = now. When `date` is in the past, start_time is set
+ * to noon (local) of that date so back-dated workouts sort correctly and don't
+ * report nonsensical durations relative to "now".
+ */
+export const createWorkout = async (opts?: { date?: string }): Promise<WorkoutSession> => {
   const db = await getDB()
+  const today = todayDate()
+  const date = opts?.date && opts.date < today ? opts.date : today
+  const startTime = date === today
+    ? Date.now()
+    : new Date(`${date}T12:00:00`).getTime()
   const record: WorkoutRecord = {
     id: uid(),
-    date: new Date().toISOString().slice(0, 10),
-    start_time: Date.now(),
+    date,
+    start_time: startTime,
     end_time: null,
     completed: false,
     notes: '',
@@ -289,10 +302,15 @@ export const completeWorkout = async (
     tx.objectStore('muscle_xp').put(applyXpToRecord(existing, xpGain))
   }
 
+  // For back-dated workouts, end_time is set to start_time + 1 h so the
+  // displayed duration doesn't reflect calendar time between the workout date
+  // and "now". For today's workouts, end_time is just now.
+  const isBackdated = w.date !== todayDate()
+  const endTime = isBackdated ? w.start_time + 60 * 60 * 1000 : Date.now()
   const completedWorkout: WorkoutRecord = {
     ...w,
     completed: true,
-    end_time: Date.now(),
+    end_time: endTime,
     xpGained: muscleXp,
   }
   tx.objectStore('workouts').put(completedWorkout)

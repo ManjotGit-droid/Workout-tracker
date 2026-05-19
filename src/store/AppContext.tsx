@@ -46,7 +46,7 @@ interface ContextValue {
   dispatch: React.Dispatch<AppAction>
   ready: boolean
   // Async workout actions that sync to API
-  startWorkout: () => Promise<void>
+  startWorkout: (opts?: { date?: string }) => Promise<void>
   addExercise: (exerciseId: string) => Promise<void>
   removeExercise: (loggedExerciseId: string) => Promise<void>
   logNewSet: (loggedExerciseId: string, data: {
@@ -143,9 +143,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // ── Async workout actions ────────────────────────────────────────────────
 
-  const startWorkout = useCallback(async () => {
+  const startWorkout = useCallback(async (opts?: { date?: string }) => {
     if (state.activeWorkout) return
-    const w = await createWorkout()
+    const w = await createWorkout(opts)
     workoutIdRef.current = w.id
     dispatch({ type: 'RESTORE_WORKOUT', workout: w })
   }, [state.activeWorkout])

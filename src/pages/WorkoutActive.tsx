@@ -49,19 +49,23 @@ export const WorkoutActive = () => {
     pausedDuration: activeWorkout?.pausedDuration ?? 0,
   })
 
+  const todayStr = new Date().toISOString().slice(0, 10)
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(!!activeWorkout && activeWorkout.exercises.length === 0)
   const [starting, setStarting] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [startDate, setStartDate] = useState<string>(todayStr)
 
   const allExercises = state.customExercises
+  const isBackdated = !!activeWorkout && activeWorkout.date !== todayStr
 
   const handleStart = async () => {
     if (starting) return
     setStarting(true)
     try {
-      await startWorkout()
+      const opts = startDate !== todayStr ? { date: startDate } : undefined
+      await startWorkout(opts)
       setShowSearch(true)
     } finally {
       setStarting(false)
@@ -70,15 +74,40 @@ export const WorkoutActive = () => {
 
   // No active workout → show explicit Start screen instead of auto-creating one
   if (!activeWorkout) {
+    const backdatedDraft = startDate !== todayStr
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
         <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Ready when you are</div>
         <h1 className="text-2xl font-display font-bold text-sl-text mb-2">Start a workout</h1>
-        <p className="text-sm text-sl-muted font-mono mb-6 max-w-xs">
+        <p className="text-sm text-sl-muted font-mono mb-5 max-w-xs">
           Nothing is being tracked yet. Tap below to begin a new session — the timer only starts after you press Start.
         </p>
+
+        <div className="w-full max-w-xs mb-5">
+          <label className="text-[11px] font-mono text-sl-muted uppercase tracking-widest block mb-1 text-left">
+            Workout date
+          </label>
+          <input
+            type="date"
+            value={startDate}
+            max={todayStr}
+            onChange={(e) => setStartDate(e.target.value || todayStr)}
+            className="w-full bg-sunken border border-border rounded-xl px-3 py-2.5 text-[14px] text-text outline-none focus:border-brand tabular-nums"
+          />
+          {backdatedDraft && (
+            <p className="text-[11px] font-mono text-brand mt-1.5 text-left">
+              Logging a missed workout for {new Date(startDate).toLocaleDateString()} — no live timer.
+            </p>
+          )}
+          {!backdatedDraft && (
+            <p className="text-[11px] font-mono text-sl-muted mt-1.5 text-left">
+              Pick a past date if you forgot to log a previous workout.
+            </p>
+          )}
+        </div>
+
         <GlowButton className="px-8 py-3" disabled={starting} onClick={handleStart}>
-          {starting ? 'Starting…' : 'Start workout'}
+          {starting ? 'Starting…' : backdatedDraft ? 'Log workout' : 'Start workout'}
         </GlowButton>
         <button
           className="mt-4 text-xs font-mono text-sl-muted hover:text-sl-text"
@@ -146,31 +175,52 @@ export const WorkoutActive = () => {
     0,
   )
 
+  const formattedWorkoutDate = new Date(activeWorkout.date).toLocaleDateString()
+  const subtitle = isBackdated
+    ? `Logging for ${formattedWorkoutDate}`
+    : isPaused
+      ? `${timer} · Paused`
+      : timer
+
   return (
     <div className="min-h-screen">
       <PageHeader
-        title="Workout"
-        subtitle={isPaused ? `${timer} · Paused` : timer}
+        title={isBackdated ? 'Backdated workout' : 'Workout'}
+        subtitle={subtitle}
         right={
           <div className="flex gap-2">
-            {isPaused ? (
-              <GlowButton size="sm" onClick={() => resumeWorkout().catch(console.error)}>
-                Resume
-              </GlowButton>
-            ) : (
-              <GlowButton variant="secondary" size="sm" onClick={() => pauseWorkout().catch(console.error)}>
-                Pause
-              </GlowButton>
+            {!isBackdated && (
+              isPaused ? (
+                <GlowButton size="sm" onClick={() => resumeWorkout().catch(console.error)}>
+                  Resume
+                </GlowButton>
+              ) : (
+                <GlowButton variant="secondary" size="sm" onClick={() => pauseWorkout().catch(console.error)}>
+                  Pause
+                </GlowButton>
+              )
             )}
             <GlowButton variant="danger" size="sm" onClick={() => setConfirmDiscard(true)}>
               Stop
             </GlowButton>
             <GlowButton size="sm" disabled={completedSets === 0} onClick={handleFinish}>
-              Finish
+              {isBackdated ? 'Save' : 'Finish'}
             </GlowButton>
           </div>
         }
       />
+
+      {isBackdated && (
+        <div className="mx-4 mt-3 mb-1 p-2.5 rounded-lg border border-brand/30 bg-brand-soft flex items-center gap-2 text-[12px]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-brand flex-shrink-0">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="text-text font-medium">
+            Recording a missed workout from {formattedWorkoutDate}. No live timer — duration is set to ~1 h on save.
+          </span>
+        </div>
+      )}
 
       {isPaused && (
         <div className="mx-4 mt-3 mb-1 p-3 rounded-lg border border-sl-purple/40 bg-sl-purple/10 flex items-center justify-between">

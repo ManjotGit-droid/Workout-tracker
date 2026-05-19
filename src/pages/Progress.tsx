@@ -21,8 +21,9 @@ import { getLevelColor } from '../data/levelConfig'
 import { fromKg, formatDate } from '../utils/formatters'
 import { RankBadge } from '../components/progression/RankBadge'
 import { BodyTab } from '../components/body/BodyTab'
+import { ChartsTab } from '../components/charts/ChartsTab'
 
-type Tab = 'muscles' | 'records' | 'body' | 'data'
+type Tab = 'muscles' | 'records' | 'body' | 'charts' | 'data'
 
 export const Progress = () => {
   const { state } = useAppStore()
@@ -85,12 +86,12 @@ export const Progress = () => {
       />
 
       {/* Tabs */}
-      <div className="flex border-b border-sl-border">
-        {(['muscles', 'records', 'body', 'data'] as Tab[]).map((t) => (
+      <div className="flex border-b border-sl-border overflow-x-auto hide-scrollbar">
+        {(['muscles', 'records', 'body', 'charts', 'data'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-2.5 text-xs font-mono uppercase tracking-widest transition-colors border-b-2 ${
+            className={`flex-1 min-w-[68px] py-2.5 text-xs font-mono uppercase tracking-widest transition-colors border-b-2 ${
               tab === t
                 ? 'text-sl-purple border-sl-purple'
                 : 'text-sl-muted border-transparent hover:text-sl-text'
@@ -201,6 +202,10 @@ export const Progress = () => {
 
         {/* ── BODY TAB ── */}
         {tab === 'body' && <BodyTab />}
+
+        {/* ── CHARTS TAB ── */}
+        {tab === 'charts' && <ChartsTab />}
+
         {/* Data Management Tab */}
         {tab === 'data' && (
           <div className="flex flex-col gap-4">
@@ -213,13 +218,8 @@ export const Progress = () => {
             </NeonCard>
 
             <NeonCard className="p-4">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="flex-1">
-                  <h3 className="text-sm font-display font-bold mb-1">Monthly Auto-Backup</h3>
-                  <p className="text-xs font-mono text-sl-muted leading-relaxed">
-                    A banner appears every 30 days asking you to save a fresh backup. One tap and it downloads — keeps your data safe across phone wipes or app reinstalls.
-                  </p>
-                </div>
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <h3 className="text-sm font-display font-bold">Monthly Auto-Backup</h3>
                 <button
                   role="switch"
                   aria-checked={autoBackup}
@@ -230,12 +230,16 @@ export const Progress = () => {
                   }`}
                 >
                   <span
-                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                      autoBackup ? 'translate-x-5' : 'translate-x-0.5'
+                    className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
+                      autoBackup ? 'translate-x-[22px]' : 'translate-x-0.5'
                     }`}
+                    style={{ transform: `translateY(-50%) translateX(${autoBackup ? '22px' : '2px'})` }}
                   />
                 </button>
               </div>
+              <p className="text-xs font-mono text-sl-muted leading-relaxed">
+                A banner appears every 30 days asking you to save a fresh backup. One tap and it downloads — keeps your data safe across phone wipes or app reinstalls.
+              </p>
               <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-sl-muted mt-3 mb-3">
                 <div>
                   <div className="text-text-muted/70 uppercase tracking-wider text-[9px]">Last backup</div>

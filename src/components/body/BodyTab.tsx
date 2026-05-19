@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useAppStore } from '../../store/AppContext'
 import { NeonCard } from '../ui/NeonCard'
 import { GlowButton } from '../ui/GlowButton'
 import { createBodyEntry, updateBodyEntry, deleteBodyEntry } from '../../api/body'
 import { fromKg, toKg, formatDate, todayISO } from '../../utils/formatters'
-import type { BodyEntry } from '../../types'
+import type { BodyEntry, WeightUnit } from '../../types'
 
 type MetricField =
   | 'weightKg' | 'bodyFatPct' | 'heightCm'
@@ -59,6 +59,96 @@ type FormValues = Partial<Record<MetricField, string>>
 
 const emptyForm = (): FormValues => ({})
 
+/**
+ * Read-only summary card for a single metric.
+ *
+ * Defined at module scope (not inside BodyTab) so its component identity is
+ * stable across renders. Earlier, this sat inside BodyTab and was rebuilt on
+ * every keystroke, causing React to unmount/remount the inputs and the mobile
+ * keyboard to dismiss after every character.
+ */
+interface MetricCardProps {
+  meta: MetricMeta
+  latest: number | undefined
+  previous: number | undefined
+  weightUnit: WeightUnit
+}
+const MetricCard = ({ meta, latest, previous, weightUnit }: MetricCardProps) => {
+  let displayVal: string = '—'
+  let displayUnit = meta.unit
+  if (latest !== undefined) {
+    if (meta.field === 'weightKg') {
+      displayVal = fromKg(latest, weightUnit).toFixed(1)
+      displayUnit = weightUnit
+    } else {
+      displayVal = Number.isInteger(latest) ? String(latest) : latest.toFixed(1)
+    }
+  }
+  let delta: number | null = null
+  let deltaDisplay: string | null = null
+  if (latest !== undefined && previous !== undefined) {
+    delta = latest - previous
+    if (Math.abs(delta) > 0.001) {
+      let d = delta
+      if (meta.field === 'weightKg') d = fromKg(latest, weightUnit) - fromKg(previous, weightUnit)
+      deltaDisplay = (d > 0 ? '+' : '') + (Number.isInteger(d) ? d.toFixed(0) : d.toFixed(1))
+    }
+  }
+  const lowerIsBetter = ['restingHrBpm', 'bodyFatPct', 'sorenessLevel', 'waistCm'].includes(meta.field)
+  const positive = delta !== null && ((delta > 0) === !lowerIsBetter)
+  const deltaColor = deltaDisplay
+    ? positive ? 'text-success' : delta === 0 ? 'text-text-muted' : 'text-danger'
+    : 'text-text-muted'
+
+  return (
+    <NeonCard className="p-3">
+      <div className="text-[10px] font-medium text-text-muted uppercase tracking-wider mb-1">{meta.label}</div>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-[20px] font-semibold tracking-tight text-text tabular-nums">{displayVal}</span>
+        {latest !== undefined && <span className="text-[11px] text-text-muted font-medium">{displayUnit}</span>}
+      </div>
+      {deltaDisplay && (
+        <div className={`text-[11px] font-mono mt-0.5 ${deltaColor}`}>
+          {deltaDisplay} {displayUnit}
+        </div>
+      )}
+    </NeonCard>
+  )
+}
+
+/**
+ * Editable input row for a single metric.
+ *
+ * Module-scoped (same reason as MetricCard above) — keeping the component
+ * identity stable is what keeps the <input> mounted between keystrokes and
+ * prevents the mobile keyboard from closing on every character.
+ */
+interface InputRowProps {
+  meta: MetricMeta
+  value: string
+  onChange: (field: MetricField, raw: string) => void
+  weightUnit: WeightUnit
+}
+const InputRow = ({ meta, value, onChange, weightUnit }: InputRowProps) => {
+  const display = meta.field === 'weightKg' ? `Weight (${weightUnit})` : meta.label
+  return (
+    <div>
+      <label className="text-[11px] text-text-muted font-medium tracking-tight block mb-1">
+        {display}{meta.unit && meta.field !== 'weightKg' ? ` (${meta.unit})` : ''}
+      </label>
+      <input
+        type="number"
+        inputMode="decimal"
+        step="any"
+        placeholder="—"
+        value={value}
+        onChange={(e) => onChange(meta.field, e.target.value)}
+        className="w-full bg-sunken border border-border rounded-xl px-3 py-2.5 text-[14px] text-text outline-none focus:border-brand transition-colors tabular-nums"
+      />
+    </div>
+  )
+}
+
 export const BodyTab = () => {
   const { state, dispatch } = useAppStore()
   const [date, setDate] = useState(todayISO())
@@ -103,10 +193,6 @@ export const BodyTab = () => {
       return v
     }
     return undefined
-  }
-
-  const setVal = (field: MetricField, raw: string) => {
-    setValues((v) => ({ ...v, [field]: raw }))
   }
 
   const buildEntryFromForm = (): Omit<BodyEntry, 'id'> => {
@@ -178,73 +264,12 @@ export const BodyTab = () => {
     setDate(todayISO())
   }
 
-  // ── Render helpers ──────────────────────────────────────────────────────────
-
-  const MetricCard = ({ meta }: { meta: MetricMeta }) => {
-    const cur = latestOf(meta.field)
-    const prev = previousOf(meta.field)
-    let displayVal: string = '—'
-    let displayUnit = meta.unit
-    if (cur !== undefined) {
-      if (meta.field === 'weightKg') {
-        displayVal = fromKg(cur, state.weightUnit).toFixed(1)
-        displayUnit = state.weightUnit
-      } else {
-        displayVal = Number.isInteger(cur) ? String(cur) : cur.toFixed(1)
-      }
-    }
-    let delta: number | null = null
-    let deltaDisplay: string | null = null
-    if (cur !== undefined && prev !== undefined) {
-      delta = cur - prev
-      if (Math.abs(delta) > 0.001) {
-        let d = delta
-        if (meta.field === 'weightKg') d = fromKg(cur, state.weightUnit) - fromKg(prev, state.weightUnit)
-        deltaDisplay = (d > 0 ? '+' : '') + (Number.isInteger(d) ? d.toFixed(0) : d.toFixed(1))
-      }
-    }
-    // For some metrics, lower is better (resting HR, body fat, soreness)
-    const lowerIsBetter = ['restingHrBpm', 'bodyFatPct', 'sorenessLevel', 'waistCm'].includes(meta.field)
-    const positive = delta !== null && ((delta > 0) === !lowerIsBetter)
-    const deltaColor = deltaDisplay
-      ? positive ? 'text-success' : delta === 0 ? 'text-text-muted' : 'text-danger'
-      : 'text-text-muted'
-
-    return (
-      <NeonCard className="p-3">
-        <div className="text-[10px] font-medium text-text-muted uppercase tracking-wider mb-1">{meta.label}</div>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[20px] font-semibold tracking-tight text-text tabular-nums">{displayVal}</span>
-          {cur !== undefined && <span className="text-[11px] text-text-muted font-medium">{displayUnit}</span>}
-        </div>
-        {deltaDisplay && (
-          <div className={`text-[11px] font-mono mt-0.5 ${deltaColor}`}>
-            {deltaDisplay} {displayUnit}
-          </div>
-        )}
-      </NeonCard>
-    )
-  }
-
-  const InputRow = ({ meta }: { meta: MetricMeta }) => {
-    const display = meta.field === 'weightKg' ? `Weight (${state.weightUnit})` : meta.label
-    return (
-      <div>
-        <label className="text-[11px] text-text-muted font-medium tracking-tight block mb-1">
-          {display}{meta.unit && meta.field !== 'weightKg' ? ` (${meta.unit})` : ''}
-        </label>
-        <input
-          type="number"
-          inputMode="decimal"
-          step="any"
-          placeholder="—"
-          value={values[meta.field] ?? ''}
-          onChange={(e) => setVal(meta.field, e.target.value)}
-          className="w-full bg-sunken border border-border rounded-xl px-3 py-2.5 text-[14px] text-text outline-none focus:border-brand transition-colors tabular-nums"
-        />
-      </div>
-    )
-  }
+  // setVal is wrapped in useCallback so the prop reference passed to InputRow
+  // is stable across renders — paired with the module-scoped InputRow this
+  // means the <input> identity is fully stable while typing.
+  const onInputChange = useCallback((field: MetricField, raw: string) => {
+    setValues((v) => ({ ...v, [field]: raw }))
+  }, [])
 
   const compositionMetrics = METRICS.filter((m) => m.category === 'composition')
   const measurementMetrics = METRICS.filter((m) => m.category === 'measurement')
@@ -291,10 +316,18 @@ export const BodyTab = () => {
 
       {/* Secondary metric strip */}
       <div className="grid grid-cols-2 gap-2 mb-4">
-        <MetricCard meta={METRICS.find((m) => m.field === 'waistCm')!} />
-        <MetricCard meta={METRICS.find((m) => m.field === 'chestCm')!} />
-        <MetricCard meta={METRICS.find((m) => m.field === 'restingHrBpm')!} />
-        <MetricCard meta={METRICS.find((m) => m.field === 'sleepHours')!} />
+        {(['waistCm', 'chestCm', 'restingHrBpm', 'sleepHours'] as MetricField[]).map((field) => {
+          const meta = METRICS.find((m) => m.field === field)!
+          return (
+            <MetricCard
+              key={field}
+              meta={meta}
+              latest={latestOf(field)}
+              previous={previousOf(field)}
+              weightUnit={state.weightUnit}
+            />
+          )
+        })}
       </div>
 
       {/* Log form */}
@@ -340,17 +373,41 @@ export const BodyTab = () => {
         {/* Section-specific fields */}
         {section === 'composition' && (
           <div className="grid grid-cols-2 gap-3">
-            {compositionMetrics.map((m) => <InputRow key={m.field} meta={m} />)}
+            {compositionMetrics.map((m) => (
+              <InputRow
+                key={m.field}
+                meta={m}
+                value={values[m.field] ?? ''}
+                onChange={onInputChange}
+                weightUnit={state.weightUnit}
+              />
+            ))}
           </div>
         )}
         {section === 'measurement' && (
           <div className="grid grid-cols-2 gap-3">
-            {measurementMetrics.map((m) => <InputRow key={m.field} meta={m} />)}
+            {measurementMetrics.map((m) => (
+              <InputRow
+                key={m.field}
+                meta={m}
+                value={values[m.field] ?? ''}
+                onChange={onInputChange}
+                weightUnit={state.weightUnit}
+              />
+            ))}
           </div>
         )}
         {section === 'wellness' && (
           <div className="grid grid-cols-2 gap-3">
-            {wellnessMetrics.map((m) => <InputRow key={m.field} meta={m} />)}
+            {wellnessMetrics.map((m) => (
+              <InputRow
+                key={m.field}
+                meta={m}
+                value={values[m.field] ?? ''}
+                onChange={onInputChange}
+                weightUnit={state.weightUnit}
+              />
+            ))}
           </div>
         )}
 
