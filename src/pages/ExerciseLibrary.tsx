@@ -17,6 +17,18 @@ const TRACKING_TYPES: { value: TrackingType; label: string }[] = [
   { value: 'cardio',     label: 'Cardio (time + distance)' },
 ]
 
+type MuscleRole = 'primary' | 'secondary' | null
+
+const BLANK_FORM = {
+  name: '',
+  category: 'push' as ExerciseCategory,
+  equipment: 'bodyweight' as Equipment,
+  tracking_type: 'strength' as TrackingType,
+  description: '',
+  // muscle_id → role; null means not selected
+  muscles: {} as Record<string, MuscleRole>,
+}
+
 export function ExerciseLibrary() {
   const { state, dispatch } = useAppStore()
   const navigate = useNavigate()
@@ -24,14 +36,7 @@ export function ExerciseLibrary() {
   const [catFilter, setCatFilter] = useState<ExerciseCategory | 'all'>('all')
   const [showAddCustom, setShowAddCustom] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [customForm, setCustomForm] = useState({
-    name: '',
-    category: 'push' as ExerciseCategory,
-    equipment: 'bodyweight' as Equipment,
-    tracking_type: 'strength' as TrackingType,
-    primaryMuscle: 'chest' as MuscleGroupId,
-    description: '',
-  })
+  const [customForm, setCustomForm] = useState(BLANK_FORM)
 
   const allExercises = state.customExercises
 
@@ -44,8 +49,24 @@ export function ExerciseLibrary() {
     return matchesSearch && matchesCat
   })
 
+  // Cycle: none → primary → secondary → none
+  function toggleMuscle(muscleId: string) {
+    setCustomForm((f) => {
+      const current = f.muscles[muscleId] ?? null
+      const next: MuscleRole = current === null ? 'primary' : current === 'primary' ? 'secondary' : null
+      const muscles = { ...f.muscles }
+      if (next === null) delete muscles[muscleId]
+      else muscles[muscleId] = next
+      return { ...f, muscles }
+    })
+  }
+
+  const selectedMuscles = Object.entries(customForm.muscles) as [string, MuscleRole][]
+  const hasPrimary = selectedMuscles.some(([, role]) => role === 'primary')
+  const canSave = customForm.name.trim().length > 0 && hasPrimary
+
   async function addCustomExercise() {
-    if (!customForm.name.trim()) return
+    if (!canSave) return
     setSaving(true)
     try {
       const ex = await createExercise({
@@ -54,11 +75,11 @@ export function ExerciseLibrary() {
         equipment: customForm.equipment,
         tracking_type: customForm.tracking_type,
         description: customForm.description,
-        muscles: [{ muscle_id: customForm.primaryMuscle, type: 'primary' }],
+        muscles: selectedMuscles.map(([muscle_id, type]) => ({ muscle_id, type: type! })),
       })
       dispatch({ type: 'ADD_CUSTOM_EXERCISE', exercise: ex })
       setShowAddCustom(false)
-      setCustomForm({ name: '', category: 'push', equipment: 'bodyweight', tracking_type: 'strength', primaryMuscle: 'chest', description: '' })
+      setCustomForm(BLANK_FORM)
     } finally {
       setSaving(false)
     }
@@ -133,7 +154,7 @@ export function ExerciseLibrary() {
           {filtered.map((ex) => {
             const primaryMuscles = ex.muscles.filter((m) => m.type === 'primary').map((m) => MUSCLE_GROUPS[m.muscleId as MuscleGroupId]?.shortName)
             const pr = state.personalRecords[ex.id]
-            const trackingBadgeColor: Record<TrackingType, string> = {
+            const trackingBadgeColor: Record<string, string> = {
               strength: 'bg-sl-purple/20 text-sl-purple',
               bodyweight: 'bg-sl-blue/20 text-sl-blue',
               duration: 'bg-emerald-500/20 text-emerald-400',
@@ -181,6 +202,7 @@ export function ExerciseLibrary() {
           <div className="relative z-10 w-full max-w-lg bg-sl-surface border-t border-sl-border rounded-t-2xl p-5 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-display font-bold mb-4">Add Custom Exercise</h3>
             <div className="flex flex-col gap-3 mb-4">
+
               <input
                 type="text"
                 placeholder="Exercise name"
@@ -188,6 +210,7 @@ export function ExerciseLibrary() {
                 onChange={(e) => setCustomForm((f) => ({ ...f, name: e.target.value }))}
                 className="bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple"
               />
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-mono text-sl-muted uppercase tracking-wider block mb-1">Category</label>
@@ -204,20 +227,52 @@ export function ExerciseLibrary() {
                   </select>
                 </div>
               </div>
+
               <div>
                 <label className="text-xs font-mono text-sl-muted uppercase tracking-wider block mb-1">Tracking Type</label>
                 <select value={customForm.tracking_type} onChange={(e) => setCustomForm((f) => ({ ...f, tracking_type: e.target.value as TrackingType }))} className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple">
                   {TRACKING_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
+
+              {/* Muscle group picker */}
               <div>
-                <label className="text-xs font-mono text-sl-muted uppercase tracking-wider block mb-1">Primary Muscle</label>
-                <select value={customForm.primaryMuscle} onChange={(e) => setCustomForm((f) => ({ ...f, primaryMuscle: e.target.value as MuscleGroupId }))} className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple">
-                  {Object.values(MUSCLE_GROUPS).map((m) => (
-                    <option key={m.id} value={m.id}>{m.displayName}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-mono text-sl-muted uppercase tracking-wider">Muscle Groups</label>
+                  <div className="flex gap-2 text-xs font-mono">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sl-purple inline-block" />Primary</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sl-blue inline-block" />Secondary</span>
+                  </div>
+                </div>
+                <p className="text-xs text-sl-muted font-mono mb-2">Tap once = primary · Tap again = secondary · Tap again = remove</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.values(MUSCLE_GROUPS).map((mg) => {
+                    const role = customForm.muscles[mg.id] ?? null
+                    return (
+                      <button
+                        key={mg.id}
+                        type="button"
+                        onClick={() => toggleMuscle(mg.id)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${
+                          role === 'primary'
+                            ? 'bg-sl-purple border-sl-purple text-white'
+                            : role === 'secondary'
+                            ? 'bg-sl-blue/20 border-sl-blue text-sl-blue'
+                            : 'border-sl-border text-sl-muted hover:border-sl-purple/40'
+                        }`}
+                      >
+                        {mg.shortName}
+                        {role === 'primary' && <span className="ml-1 opacity-70">1°</span>}
+                        {role === 'secondary' && <span className="ml-1 opacity-70">2°</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+                {!hasPrimary && (
+                  <p className="text-xs text-sl-danger/80 font-mono mt-1.5">Select at least one primary muscle</p>
+                )}
               </div>
+
               <textarea
                 placeholder="Description (optional)"
                 value={customForm.description}
@@ -226,11 +281,12 @@ export function ExerciseLibrary() {
                 className="bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple resize-none"
               />
             </div>
+
             <div className="flex gap-3">
-              <GlowButton className="flex-1" onClick={addCustomExercise} disabled={!customForm.name.trim() || saving}>
+              <GlowButton className="flex-1" onClick={addCustomExercise} disabled={!canSave || saving}>
                 {saving ? 'Saving…' : 'Add Exercise'}
               </GlowButton>
-              <GlowButton variant="secondary" className="flex-1" onClick={() => setShowAddCustom(false)}>
+              <GlowButton variant="secondary" className="flex-1" onClick={() => { setShowAddCustom(false); setCustomForm(BLANK_FORM) }}>
                 Cancel
               </GlowButton>
             </div>
