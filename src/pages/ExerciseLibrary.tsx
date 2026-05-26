@@ -7,6 +7,7 @@ import { GlowButton } from '../components/ui/GlowButton'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { EXERCISES as SEED_EXERCISES } from '../data/exercises'
 import { fromKg, formatDate } from '../utils/formatters'
+import { estimate1RM } from '../utils/strength'
 import { createExercise, updateExercise, deleteExercise } from '../api/exercises'
 import { ExerciseDemoModal } from '../components/exercise-vis/ExerciseDemoModal'
 import type { Exercise, MuscleGroupId, ExerciseCategory, Equipment, TrackingType } from '../types'
@@ -215,6 +216,8 @@ export const ExerciseLibrary = () => {
                 .map((pr) => {
                   const ex = allExercises.find((e) => e.id === pr.exerciseId)
                   if (!ex) return null
+                  const est1rmKg = estimate1RM(pr.weightKg, pr.reps)
+                  const est1rmDisp = fromKg(est1rmKg, state.weightUnit)
                   return (
                     <NeonCard key={pr.exerciseId} className="p-2.5" glow="gold">
                       <div className="text-xs font-display font-semibold truncate">{ex.name}</div>
@@ -223,6 +226,11 @@ export const ExerciseLibrary = () => {
                         <span className="text-xs text-sl-muted ml-1">{state.weightUnit}</span>
                       </div>
                       <div className="text-xs font-mono text-sl-muted">{pr.reps} reps · {formatDate(pr.date)}</div>
+                      {pr.reps > 1 && est1rmKg > 0 && (
+                        <div className="text-[10px] font-mono text-sl-gold/70 mt-0.5 tabular-nums">
+                          est. 1RM {est1rmDisp.toFixed(1)} {state.weightUnit}
+                        </div>
+                      )}
                     </NeonCard>
                   )
                 })}

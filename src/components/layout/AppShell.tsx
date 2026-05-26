@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { BottomNav } from './BottomNav'
 import { BackupBanner } from './BackupBanner'
+import { QuickAddFab } from './QuickAddFab'
 import { LevelUpModal } from '../progression/LevelUpModal'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import { UserPill } from '../ui/UserPill'
@@ -19,6 +20,7 @@ export const AppShell = () => (
       <UserPill />
     </div>
 
+    <QuickAddFab />
     <BottomNav />
     <LevelUpModal />
   </div>

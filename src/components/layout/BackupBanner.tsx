@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { isBackupDue, runBackupNow } from '../../utils/autoBackup'
+import { useToast } from '../ui/Toast'
 
 /**
  * Renders a slim banner at the very top of the app when an auto-backup is
@@ -10,6 +11,7 @@ export const BackupBanner = () => {
   const [due, setDue] = useState<boolean>(false)
   const [running, setRunning] = useState(false)
   const [dismissed, setDismissed] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     setDue(isBackupDue())
@@ -28,8 +30,10 @@ export const BackupBanner = () => {
     try {
       await runBackupNow()
       setDue(false)
+      toast({ message: 'Backup saved', variant: 'success' })
     } catch {
       // Leave the banner visible so the user can try again
+      toast({ message: 'Backup failed — try again', variant: 'error' })
     } finally {
       setRunning(false)
     }

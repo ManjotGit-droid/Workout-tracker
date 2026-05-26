@@ -310,6 +310,24 @@ textarea:focus-visible {
   animation: setRowPulse 0.6s ease-out forwards;
 }
 
+/* Skeleton placeholder pulse — used by <Skeleton /> while IDB hydrates. */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.85; }
+}
+.skeleton-pulse {
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+/* Hero number — used on Dashboard stats and XPBar level for the
+   Apple-Fitness big-number feel. Tighter kerning + heavier weight. */
+.hero-number {
+  font-feature-settings: 'tnum', 'cv11';
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+}
+
 /* ============================================================
    REDUCED MOTION
    ============================================================ */

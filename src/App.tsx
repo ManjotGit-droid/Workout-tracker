@@ -11,6 +11,7 @@ import { WorkoutPlans } from './pages/WorkoutPlans'
 import { Users } from './pages/Users'
 import { ThemeProvider } from './store/ThemeContext'
 import { UserProvider } from './store/UserContext'
+import { ToastProvider } from './components/ui/Toast'
 
 export const App = () => (
     <ThemeProvider>
@@ -19,21 +20,23 @@ export const App = () => (
           from the new user's IndexedDB. */}
       <UserProvider>
         <AppProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route element={<AppShell />}>
-                <Route index element={<Dashboard />} />
-                <Route path="workout" element={<WorkoutActive />} />
-                <Route path="workout/complete" element={<WorkoutComplete />} />
-                <Route path="muscles/:id" element={<MuscleDetail />} />
-                <Route path="exercises" element={<ExerciseLibrary />} />
-                <Route path="plans" element={<WorkoutPlans />} />
-                <Route path="progress" element={<Progress />} />
-                <Route path="users" element={<Users />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
+          <ToastProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route element={<AppShell />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="workout" element={<WorkoutActive />} />
+                  <Route path="workout/complete" element={<WorkoutComplete />} />
+                  <Route path="muscles/:id" element={<MuscleDetail />} />
+                  <Route path="exercises" element={<ExerciseLibrary />} />
+                  <Route path="plans" element={<WorkoutPlans />} />
+                  <Route path="progress" element={<Progress />} />
+                  <Route path="users" element={<Users />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </ToastProvider>
         </AppProvider>
       </UserProvider>
     </ThemeProvider>

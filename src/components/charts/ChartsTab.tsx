@@ -180,6 +180,53 @@ const computeVolumePerWeek = (workouts: WorkoutSession[], weeks: number, unit: W
   }))
 }
 
+const computeSetsPerWeek = (workouts: WorkoutSession[], weeks: number) => {
+  const buckets: Record<string, number> = {}
+  for (const w of workouts) {
+    if (!w.completed) continue
+    const k = weekKey(new Date(w.date))
+    let count = 0
+    for (const we of w.exercises) {
+      for (const s of we.sets) if (s.completed) count++
+    }
+    buckets[k] = (buckets[k] ?? 0) + count
+  }
+  return lastNWeeks(weeks).map((k) => buckets[k] ?? 0)
+}
+
+const pctChange = (current: number, prior: number): number | null => {
+  if (prior === 0) return current === 0 ? 0 : null
+  return ((current - prior) / prior) * 100
+}
+
+interface DeltaProps {
+  label: string
+  current: number
+  prior: number
+  unit?: string
+}
+const DeltaCard = ({ label, current, prior, unit }: DeltaProps) => {
+  const pct = pctChange(current, prior)
+  const direction = pct === null ? 'neutral' : pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral'
+  const color = direction === 'up' ? '#22ee99' : direction === 'down' ? '#ff4d6d' : 'var(--text-muted)'
+  const arrow = direction === 'up' ? '▲' : direction === 'down' ? '▼' : '·'
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="text-[10px] font-mono text-text-muted uppercase tracking-wider">{label}</div>
+      <div className="text-xl font-mono font-bold tabular-nums" style={{ letterSpacing: '-0.03em' }}>
+        {current.toLocaleString()}
+        {unit && <span className="text-[10px] font-mono text-text-muted ml-1">{unit}</span>}
+      </div>
+      <div className="text-[10px] font-mono flex items-center gap-1" style={{ color }}>
+        <span>{arrow}</span>
+        <span>
+          {pct === null ? 'new' : pct === 0 ? 'no change' : `${pct > 0 ? '+' : ''}${pct.toFixed(0)}% vs last wk`}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 const computeBodyMetric = (entries: BodyEntry[], field: keyof BodyEntry) => {
   return entries
     .filter((e) => typeof e[field] === 'number')
@@ -242,6 +289,15 @@ export const ChartsTab = () => {
     () => computeVolumePerWeek(completedWorkouts, 8, weightUnit),
     [completedWorkouts, weightUnit],
   )
+  const setsPerWeek = useMemo(() => computeSetsPerWeek(completedWorkouts, 2), [completedWorkouts])
+  const volumeLast2 = useMemo(
+    () => computeVolumePerWeek(completedWorkouts, 2, weightUnit).map((b) => b.value),
+    [completedWorkouts, weightUnit],
+  )
+  const workoutsLast2 = useMemo(
+    () => computeWorkoutsPerWeek(completedWorkouts, 2).map((b) => b.value),
+    [completedWorkouts],
+  )
 
   const perMuscleVolume = useMemo(
     () => computePerMuscleVolume(completedWorkouts, 6, customExercises),
@@ -287,6 +343,29 @@ export const ChartsTab = () => {
 
       {/* ── Workout trends section ───────────────────────────────── */}
       <div className="text-[11px] font-mono text-text-muted uppercase tracking-widest mt-2">Workout trends · last 8 weeks</div>
+
+      {/* Week-over-week deltas (C10) */}
+      <NeonCard className="p-3">
+        <div className="text-[10px] font-mono text-text-muted uppercase tracking-widest mb-2">This week vs last</div>
+        <div className="grid grid-cols-3 gap-2">
+          <DeltaCard
+            label="Workouts"
+            current={workoutsLast2[1] ?? 0}
+            prior={workoutsLast2[0] ?? 0}
+          />
+          <DeltaCard
+            label="Sets"
+            current={setsPerWeek[1] ?? 0}
+            prior={setsPerWeek[0] ?? 0}
+          />
+          <DeltaCard
+            label="Volume"
+            current={volumeLast2[1] ?? 0}
+            prior={volumeLast2[0] ?? 0}
+            unit={weightUnit}
+          />
+        </div>
+      </NeonCard>
 
       <NeonCard className="p-3">
         <div className="flex items-baseline justify-between mb-2">

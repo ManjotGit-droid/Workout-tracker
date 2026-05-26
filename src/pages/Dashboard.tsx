@@ -6,9 +6,12 @@ import { RankBadge } from '../components/progression/RankBadge'
 import { NeonCard } from '../components/ui/NeonCard'
 import { GlowButton } from '../components/ui/GlowButton'
 import { EmptyState } from '../components/ui/EmptyState'
+import { AnimatedNumber } from '../components/ui/AnimatedNumber'
+import { Skeleton } from '../components/ui/Skeleton'
 import { RANK_COLORS } from '../data/levelConfig'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { formatDate } from '../utils/formatters'
+import { computeStreak, isStreakAtRisk } from '../utils/streak'
 import type { MuscleGroupId } from '../types'
 
 // Stagger variants reused for the top-muscles and recent-sessions lists.
@@ -21,8 +24,26 @@ const listItem = {
   show: { y: 0, opacity: 1, transition: { duration: 0.25, ease: 'easeOut' as const } },
 }
 
+const greetingFor = (hour: number): string => {
+  if (hour < 5)  return 'Late night, Hunter'
+  if (hour < 12) return 'Good morning, Hunter'
+  if (hour < 17) return 'Good afternoon, Hunter'
+  if (hour < 21) return 'Good evening, Hunter'
+  return 'Good night, Hunter'
+}
+
+// Hue overlay tint per time-of-day. Kept very subtle (alpha < 0.05) so it
+// reads as ambience rather than chrome.
+const timeOfDayTint = (hour: number): string => {
+  if (hour < 5)  return 'radial-gradient(circle at 0% 0%, rgba(120, 80, 200, 0.05), transparent 55%)'
+  if (hour < 12) return 'radial-gradient(circle at 0% 0%, rgba(255, 200, 120, 0.05), transparent 55%)'
+  if (hour < 17) return 'radial-gradient(circle at 0% 0%, rgba(120, 220, 255, 0.04), transparent 55%)'
+  if (hour < 21) return 'radial-gradient(circle at 0% 0%, rgba(255, 160, 80, 0.05), transparent 55%)'
+  return 'radial-gradient(circle at 0% 0%, rgba(60, 100, 200, 0.05), transparent 55%)'
+}
+
 export const Dashboard = () => {
-  const { state } = useAppStore()
+  const { state, ready } = useAppStore()
   const navigate = useNavigate()
   const { profile, activeWorkout } = state
 
@@ -34,17 +55,59 @@ export const Dashboard = () => {
     .sort((a, b) => b.level - a.level)
     .slice(0, 5)
 
+  const topLevel = Math.max(...Object.values(profile.muscleGroups).map((m) => m.level))
+  const streak = computeStreak(profile.workoutHistory)
+  const streakAtRisk = isStreakAtRisk(profile.workoutHistory)
+
+  const hour = new Date().getHours()
+  const greeting = greetingFor(hour)
+
+  // ── Skeleton state during initial IDB hydration ──────────────────────────
+  if (!ready) {
+    return (
+      <div className="min-h-screen">
+        <div className="px-4 pt-6 pb-3 flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-7 w-44" />
+          </div>
+          <Skeleton className="w-14 h-14" rounded />
+        </div>
+        <div className="px-4 mb-4">
+          <Skeleton className="h-72 w-full" />
+        </div>
+        <div className="px-4 mb-4 grid grid-cols-2 gap-3">
+          <Skeleton className="col-span-2 h-24" />
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+        </div>
+        <div className="px-4">
+          <Skeleton className="h-12 w-full mb-2" />
+          <Skeleton className="h-12 w-full mb-2" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {/* Time-of-day ambient tint (A2) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{ background: timeOfDayTint(hour) }}
+      />
+
       {/* Header */}
       <div className="px-4 pt-6 pb-3 flex items-center justify-between">
-        <div>
-          <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-1">Hunter Status</div>
+        <div className="min-w-0">
+          <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-1 truncate">{greeting}</div>
           <h1 className="text-2xl font-display font-bold text-sl-text">Solo Gym Tracker</h1>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right mr-1">
-            <div className="text-xs font-mono text-sl-muted">{profile.totalWorkouts} workouts</div>
+            <div className="text-xs font-mono text-sl-muted tabular-nums">{profile.totalWorkouts} workouts</div>
             <div className="text-xs font-mono" style={{ color: rankColors.text }}>
               Rank {profile.rank}
             </div>
@@ -52,6 +115,34 @@ export const Dashboard = () => {
           <RankBadge rank={profile.rank} size="lg" />
         </div>
       </div>
+
+      {/* Streak pill (C7) — shown when streak > 0 */}
+      {streak > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-4 mb-3"
+        >
+          <div
+            className={`flex items-center gap-2 px-3 py-2 rounded-full border w-fit ${
+              streakAtRisk
+                ? 'border-gold/50 bg-gold/10 text-gold'
+                : 'border-brand/40 bg-brand/10 text-brand'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+              <path d="M12 2c-1 4-4 5-4 9a4 4 0 0 0 8 0c0-2-1-3-2-4 0 1-1 2-2 2 0-2 1-4 0-7z" opacity="0.85" />
+              <path d="M9 14c0 2 1 4 3 4s3-2 3-4-1-3-2-3c0 1-1 2-2 2 0-1 0-2-1-2-1 1-1 2-1 3z" fill="white" opacity="0.35" />
+            </svg>
+            <span className="text-xs font-mono font-semibold tabular-nums">
+              {streak}-day streak
+            </span>
+            {streakAtRisk && (
+              <span className="text-[10px] font-mono opacity-80 ml-1">· train today to keep it</span>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* Active workout banner */}
       {activeWorkout && (
@@ -87,8 +178,8 @@ export const Dashboard = () => {
         <NeonCard className="col-span-2 p-4 flex items-center justify-between" glow="purple">
           <div>
             <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mb-1">Workouts</div>
-            <div className="text-3xl font-mono font-bold text-sl-purple tabular-nums">
-              {profile.totalWorkouts}
+            <div className="text-3xl text-sl-purple hero-number">
+              <AnimatedNumber value={profile.totalWorkouts} />
             </div>
             <div className="text-[11px] font-mono text-text-muted mt-0.5">
               {profile.workoutHistory.length > 0 ? `Last: ${formatDate(profile.workoutHistory[0].date)}` : 'No sessions yet'}
@@ -99,12 +190,14 @@ export const Dashboard = () => {
           </svg>
         </NeonCard>
         <NeonCard className="p-3 text-center">
-          <div className="text-2xl font-mono font-bold text-sl-blue tabular-nums">{profile.totalSets}</div>
+          <div className="text-2xl text-sl-blue hero-number">
+            <AnimatedNumber value={profile.totalSets} />
+          </div>
           <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Sets</div>
         </NeonCard>
         <NeonCard className="p-3 text-center" onClick={() => topMuscles[0] && navigate('/muscles/' + topMuscles[0].id)}>
-          <div className="text-2xl font-mono font-bold text-sl-gold tabular-nums">
-            {Math.max(...Object.values(profile.muscleGroups).map((m) => m.level))}
+          <div className="text-2xl text-sl-gold hero-number">
+            <AnimatedNumber value={topLevel} />
           </div>
           <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Top Level</div>
         </NeonCard>

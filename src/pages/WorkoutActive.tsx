@@ -8,6 +8,7 @@ import { GlowButton } from '../components/ui/GlowButton'
 import { NeonCard } from '../components/ui/NeonCard'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { toKg } from '../utils/formatters'
+import { estimate1RM } from '../utils/strength'
 import { ExerciseDemoModal } from '../components/exercise-vis/ExerciseDemoModal'
 import type { Exercise, MuscleGroupId, TrackingType } from '../types'
 
@@ -478,46 +479,59 @@ const SetRow = ({ idx, set, trackingType, weightUnit, onPatch, onToggle, onRemov
     onToggle()
   }
 
+  // Estimated 1RM (Epley) — only meaningful for strength tracking with both
+  // reps and weight present. Stored in kg internally; converted on display.
+  const showEst1RM = trackingType === 'strength' && (set.reps ?? 0) > 0 && (set.weight ?? 0) > 0
+  const est1RMKg = showEst1RM ? estimate1RM(set.weight!, set.reps!) : 0
+  const est1RMDisp = weightUnit === 'lbs' ? est1RMKg * 2.20462 : est1RMKg
+
   return (
-    <div className={`grid ${cols.grid} gap-2 items-center mb-1.5 rounded-lg px-1 py-1 transition-colors ${set.completed ? 'bg-sl-purple/10' : ''} ${justCompleted ? 'set-row-pulse' : ''}`}>
-      <span className="text-xs font-mono text-sl-muted text-center tabular-nums">{idx + 1}</span>
-      {cols.fields.map((field) => (
-        <input
-          key={field}
-          type="text"
-          inputMode={field === 'duration' ? 'text' : 'decimal'}
-          defaultValue={displayValue(field)}
-          placeholder={field === 'duration' ? '0:00' : field === 'distance' ? 'm' : '0'}
-          onBlur={(e) => onPatch(field, e.target.value)}
-          className="bg-sl-border/50 border border-sl-border rounded px-2 py-1 text-sm font-mono text-center text-sl-text focus:border-sl-purple outline-none w-full tabular-nums"
-        />
-      ))}
-      <div className="flex gap-1">
-        <button
-          onClick={handleToggle}
-          aria-label={set.completed ? 'Unmark set complete' : 'Mark set complete'}
-          aria-pressed={set.completed}
-          className={`w-7 h-8 rounded-lg border flex items-center justify-center transition-all ${
-            set.completed ? 'bg-sl-purple border-sl-purple text-white' : 'border-sl-border text-sl-muted hover:border-sl-purple'
-          }`}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
-            <motion.path
-              d="M5 13l4 4L19 7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              initial={false}
-              animate={{ pathLength: set.completed ? 1 : 0, opacity: set.completed ? 1 : 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-            />
-          </svg>
-        </button>
-        <button onClick={onRemove} aria-label="Remove set" className="w-5 h-8 flex items-center justify-center text-sl-muted hover:text-sl-danger opacity-40 hover:opacity-100 transition-opacity">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
-            <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
-          </svg>
-        </button>
+    <div className={`rounded-lg px-1 py-1 transition-colors ${set.completed ? 'bg-sl-purple/10' : ''} ${justCompleted ? 'set-row-pulse' : ''}`}>
+      <div className={`grid ${cols.grid} gap-2 items-center`}>
+        <span className="text-xs font-mono text-sl-muted text-center tabular-nums">{idx + 1}</span>
+        {cols.fields.map((field) => (
+          <input
+            key={field}
+            type="text"
+            inputMode={field === 'duration' ? 'text' : 'decimal'}
+            defaultValue={displayValue(field)}
+            placeholder={field === 'duration' ? '0:00' : field === 'distance' ? 'm' : '0'}
+            onBlur={(e) => onPatch(field, e.target.value)}
+            className="bg-sl-border/50 border border-sl-border rounded px-2 py-1 text-sm font-mono text-center text-sl-text focus:border-sl-purple outline-none w-full tabular-nums"
+          />
+        ))}
+        <div className="flex gap-1">
+          <button
+            onClick={handleToggle}
+            aria-label={set.completed ? 'Unmark set complete' : 'Mark set complete'}
+            aria-pressed={set.completed}
+            className={`w-7 h-8 rounded-lg border flex items-center justify-center transition-all ${
+              set.completed ? 'bg-sl-purple border-sl-purple text-white' : 'border-sl-border text-sl-muted hover:border-sl-purple'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
+              <motion.path
+                d="M5 13l4 4L19 7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                initial={false}
+                animate={{ pathLength: set.completed ? 1 : 0, opacity: set.completed ? 1 : 0 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+              />
+            </svg>
+          </button>
+          <button onClick={onRemove} aria-label="Remove set" className="w-5 h-8 flex items-center justify-center text-sl-muted hover:text-sl-danger opacity-40 hover:opacity-100 transition-opacity">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
       </div>
+      {showEst1RM && (
+        <div className="text-[10px] font-mono text-text-muted/70 text-right pr-12 mt-0.5 tabular-nums">
+          est. 1RM {est1RMDisp.toFixed(1)} {weightUnit}
+        </div>
+      )}
     </div>
   )
 }
