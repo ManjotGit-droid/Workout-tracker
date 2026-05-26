@@ -282,6 +282,21 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
     case 'CLEAR_LAST_COMPLETED':
       return { ...state, lastCompletedWorkout: null }
 
+    case 'LOAD_TEMPLATES':
+      return { ...state, workoutTemplates: action.templates }
+
+    case 'SAVE_TEMPLATE':
+      return {
+        ...state,
+        workoutTemplates: [action.template, ...state.workoutTemplates.filter((t) => t.id !== action.template.id)],
+      }
+
+    case 'DELETE_TEMPLATE':
+      return {
+        ...state,
+        workoutTemplates: state.workoutTemplates.filter((t) => t.id !== action.templateId),
+      }
+
     default:
       return state
   }

@@ -53,6 +53,8 @@ export interface LoggedSet {
   distance?: number   // metres
   completed: boolean
   notes?: string
+  /** Rate of Perceived Exertion, 1–10 (RPE scale). */
+  rpe?: number
   timestamp: number
 }
 
@@ -145,6 +147,14 @@ export interface BodyEntry {
   notes?: string
 }
 
+export interface WorkoutTemplate {
+  id: string
+  name: string
+  /** Ordered list of exercise IDs to pre-populate. */
+  exerciseIds: string[]
+  createdAt: number
+}
+
 export interface AppState {
   profile: UserProfile
   activeWorkout: WorkoutSession | null
@@ -154,6 +164,7 @@ export interface AppState {
   personalRecords: Record<string, PersonalRecord>
   bodyLog: BodyEntry[]
   customExercises: Exercise[]
+  workoutTemplates: WorkoutTemplate[]
 }
 
 export interface MuscleGroupMeta {

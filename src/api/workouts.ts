@@ -15,6 +15,7 @@ const toSet = (s: SetRecord): LoggedSet => ({
   distance: s.distance ?? undefined,
   completed: s.completed,
   notes: s.notes || undefined,
+  rpe: s.rpe ?? undefined,
   timestamp: s.timestamp,
 })
 
@@ -46,6 +47,7 @@ interface ApiSet {
   distance: number | null
   completed: number
   notes: string
+  rpe: number | null
   timestamp: number
 }
 
@@ -58,6 +60,7 @@ const toApiSet = (s: SetRecord, weId: string): ApiSet => ({
   distance: s.distance,
   completed: s.completed ? 1 : 0,
   notes: s.notes,
+  rpe: s.rpe ?? null,
   timestamp: s.timestamp,
 })
 
@@ -188,6 +191,7 @@ export const logSet = async (
     duration?: number
     distance?: number
     notes?: string
+    rpe?: number
     completed?: boolean
   },
 ): Promise<ApiSet> => {
@@ -203,6 +207,7 @@ export const logSet = async (
     distance: data.distance ?? null,
     completed: data.completed ?? false,
     notes: data.notes ?? '',
+    rpe: data.rpe ?? null,
     timestamp: Date.now(),
   }
   const updated: WorkoutRecord = {
@@ -226,6 +231,7 @@ export const updateSet = async (
     distance?: number
     completed?: boolean
     notes?: string
+    rpe?: number | null
   },
 ): Promise<ApiSet> => {
   const db = await getDB()

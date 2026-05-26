@@ -16,6 +16,8 @@ export interface SetRecord {
   distance: number | null
   completed: boolean
   notes: string
+  /** RPE 1–10 (optional, added in Phase 2). */
+  rpe?: number | null
   timestamp: number
 }
 

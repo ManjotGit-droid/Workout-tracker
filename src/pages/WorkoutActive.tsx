@@ -10,7 +10,15 @@ import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { toKg } from '../utils/formatters'
 import { estimate1RM } from '../utils/strength'
 import { ExerciseDemoModal } from '../components/exercise-vis/ExerciseDemoModal'
-import type { Exercise, MuscleGroupId, TrackingType } from '../types'
+import { RestTimer } from '../components/workout/RestTimer'
+import { useToast } from '../components/ui/Toast'
+import type { Exercise, MuscleGroupId, TrackingType, WorkoutTemplate, LoggedSet } from '../types'
+
+// uid for new template ids — small, dependency-free
+const newId = (): string => `t_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+
+const REST_DURATION_KEY = 'restDurationSec'
+const DEFAULT_REST_SEC = 90
 
 // Format seconds → mm:ss display
 const fmtDuration = (secs: number): string => {
@@ -43,6 +51,7 @@ const TrackingHint = ({ type }: { type: TrackingType }) => {
 export const WorkoutActive = () => {
   const { state, dispatch, startWorkout, addExercise, removeExercise, logNewSet, patchSet, removeSet, finishWorkout, discardWorkout, pauseWorkout, resumeWorkout } = useAppStore()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const { activeWorkout, weightUnit } = state
   const isPaused = !!activeWorkout?.pausedAt
   const timer = useWorkoutTimer({
@@ -60,8 +69,31 @@ export const WorkoutActive = () => {
   const [startDate, setStartDate] = useState<string>(todayStr)
   const [demoExercise, setDemoExercise] = useState<Exercise | null>(null)
 
+  // Rest-timer state (C1) — local to this screen; cleared on stop/finish.
+  const [restStartedAt, setRestStartedAt] = useState<number | null>(null)
+  const [restDuration, setRestDuration] = useState<number>(() => {
+    const stored = parseInt(localStorage.getItem(REST_DURATION_KEY) ?? '', 10)
+    return Number.isFinite(stored) && stored > 0 ? stored : DEFAULT_REST_SEC
+  })
+
+  // Notes/RPE sheet (C5) — { loggedExerciseId, set } | null
+  const [noteSheet, setNoteSheet] = useState<{ loggedExerciseId: string; set: LoggedSet } | null>(null)
+
+  // Templates (C6) — save-as-template modal + template-pick state on start screen
+  const [savingTemplate, setSavingTemplate] = useState(false)
+  const [templateName, setTemplateName] = useState('')
+
   const allExercises = state.customExercises
   const isBackdated = !!activeWorkout && activeWorkout.date !== todayStr
+
+  // Persist preferred rest duration whenever it changes.
+  const updateRestDuration = (deltaSec: number) => {
+    setRestDuration((cur) => {
+      const next = Math.max(15, cur + deltaSec)
+      localStorage.setItem(REST_DURATION_KEY, String(next))
+      return next
+    })
+  }
 
   const handleStart = async () => {
     if (starting) return
@@ -79,7 +111,7 @@ export const WorkoutActive = () => {
   if (!activeWorkout) {
     const backdatedDraft = startDate !== todayStr
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+      <div className="min-h-screen flex flex-col items-center px-6 text-center pt-12 pb-8">
         <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Ready when you are</div>
         <h1 className="text-2xl font-display font-bold text-sl-text mb-2">Start a workout</h1>
         <p className="text-sm text-sl-muted font-mono mb-5 max-w-xs">
@@ -112,8 +144,46 @@ export const WorkoutActive = () => {
         <GlowButton className="px-8 py-3" disabled={starting} onClick={handleStart}>
           {starting ? 'Starting…' : backdatedDraft ? 'Log workout' : 'Start workout'}
         </GlowButton>
+
+        {/* Templates panel (C6) */}
+        {state.workoutTemplates.length > 0 && (
+          <div className="w-full max-w-md mt-8">
+            <div className="text-[11px] font-mono text-sl-muted uppercase tracking-widest mb-2 text-left">
+              Saved templates
+            </div>
+            <div className="flex flex-col gap-2">
+              {state.workoutTemplates.map((t) => (
+                <NeonCard key={t.id} className="p-3 flex items-center gap-3">
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="text-sm font-display font-semibold truncate">{t.name}</div>
+                    <div className="text-[11px] font-mono text-sl-muted">
+                      {t.exerciseIds.length} exercises
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleStartFromTemplate(t)}
+                    disabled={starting}
+                    className="text-[11px] font-mono text-brand border border-brand/40 rounded-md px-2 py-1 hover:bg-brand/10 disabled:opacity-50"
+                  >
+                    Use
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTemplate(t.id)}
+                    aria-label={`Delete template ${t.name}`}
+                    className="text-text-muted hover:text-danger w-7 h-7 flex items-center justify-center"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </NeonCard>
+              ))}
+            </div>
+          </div>
+        )}
+
         <button
-          className="mt-4 text-xs font-mono text-sl-muted hover:text-sl-text"
+          className="mt-6 text-xs font-mono text-sl-muted hover:text-sl-text"
           onClick={() => navigate('/')}
         >
           Back to dashboard
@@ -161,6 +231,48 @@ export const WorkoutActive = () => {
 
   const handleToggleSet = async (loggedExId: string, setId: string, completed: boolean) => {
     await patchSet(loggedExId, setId, { completed })
+    // Auto-start rest timer ONLY when marking a set complete (not when undoing).
+    if (completed && !isBackdated) {
+      setRestStartedAt(Date.now())
+    }
+  }
+
+  const handlePatchNotesRpe = async (loggedExId: string, setId: string, notes: string, rpe: number | null) => {
+    await patchSet(loggedExId, setId, { notes, rpe: rpe ?? undefined })
+  }
+
+  const handleSaveTemplate = () => {
+    if (!activeWorkout || !templateName.trim()) return
+    const template: WorkoutTemplate = {
+      id: newId(),
+      name: templateName.trim(),
+      exerciseIds: activeWorkout.exercises.map((e) => e.exerciseId),
+      createdAt: Date.now(),
+    }
+    dispatch({ type: 'SAVE_TEMPLATE', template })
+    toast({ message: `Saved template "${template.name}"`, variant: 'success' })
+    setSavingTemplate(false)
+    setTemplateName('')
+  }
+
+  const handleStartFromTemplate = async (t: WorkoutTemplate) => {
+    if (starting) return
+    setStarting(true)
+    try {
+      const opts = startDate !== todayStr ? { date: startDate } : undefined
+      await startWorkout(opts)
+      for (const exId of t.exerciseIds) {
+        await addExercise(exId)
+      }
+      setShowSearch(false)
+      toast({ message: `Loaded "${t.name}"`, variant: 'info' })
+    } finally {
+      setStarting(false)
+    }
+  }
+
+  const handleDeleteTemplate = (id: string) => {
+    dispatch({ type: 'DELETE_TEMPLATE', templateId: id })
   }
 
   const handleFinish = async () => {
@@ -315,6 +427,7 @@ export const WorkoutActive = () => {
                           onPatch={(field, val) => handlePatchSet(loggedEx.id, set.id, field, val)}
                           onToggle={() => handleToggleSet(loggedEx.id, set.id, !set.completed)}
                           onRemove={() => removeSet(loggedEx.id, set.id)}
+                          onOpenNotes={() => setNoteSheet({ loggedExerciseId: loggedEx.id, set })}
                         />
                       ))}
 
@@ -404,7 +517,30 @@ export const WorkoutActive = () => {
             </button>
           ))}
         </div>
+
+        {/* Save-as-template (C6) — only enabled once exercises have been added */}
+        {activeWorkout.exercises.length > 0 && (
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={() => setSavingTemplate(true)}
+              className="text-[11px] font-mono text-text-muted hover:text-brand border border-border hover:border-brand/40 rounded-md px-3 py-1.5 transition-colors flex items-center gap-1.5"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
+                <path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Save as template
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Rest timer (C1) */}
+      <RestTimer
+        startedAt={restStartedAt}
+        duration={restDuration}
+        onSkip={() => setRestStartedAt(null)}
+        onAdjust={(d) => updateRestDuration(d)}
+      />
 
       {/* Discard modal */}
       <AnimatePresence>
@@ -419,6 +555,53 @@ export const WorkoutActive = () => {
               <div className="flex gap-3">
                 <GlowButton variant="danger" className="flex-1" onClick={handleDiscard}>Stop &amp; discard</GlowButton>
                 <GlowButton variant="secondary" className="flex-1" onClick={() => setConfirmDiscard(false)}>Keep going</GlowButton>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Notes / RPE sheet (C5) */}
+      <NotesRpeSheet
+        sheet={noteSheet}
+        onClose={() => setNoteSheet(null)}
+        onSave={(notes, rpe) => {
+          if (!noteSheet) return
+          handlePatchNotesRpe(noteSheet.loggedExerciseId, noteSheet.set.id, notes, rpe)
+          setNoteSheet(null)
+        }}
+      />
+
+      {/* Save-as-template modal (C6) */}
+      <AnimatePresence>
+        {savingTemplate && (
+          <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div className="absolute inset-0 bg-black/60" onClick={() => setSavingTemplate(false)} />
+            <motion.div
+              className="relative z-10 w-full max-w-lg bg-sl-surface border-t border-sl-border rounded-t-2xl p-6"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+            >
+              <h3 className="text-lg font-display font-bold mb-2">Save as template</h3>
+              <p className="text-sm text-sl-muted font-mono mb-4">
+                Stores the current exercise list (no weights or sets) so you can load it next time.
+              </p>
+              <input
+                type="text"
+                autoFocus
+                placeholder="e.g. Push day, Leg day"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple mb-4"
+              />
+              <div className="flex gap-3">
+                <GlowButton className="flex-1" onClick={handleSaveTemplate} disabled={!templateName.trim()}>
+                  Save template
+                </GlowButton>
+                <GlowButton variant="secondary" className="flex-1" onClick={() => { setSavingTemplate(false); setTemplateName('') }}>
+                  Cancel
+                </GlowButton>
               </div>
             </motion.div>
           </motion.div>
@@ -446,15 +629,16 @@ const SetHeaders = ({ trackingType, weightUnit }: { trackingType: TrackingType; 
 
 type SetRowProps = {
   idx: number
-  set: { id: string; reps?: number; weight?: number; duration?: number; distance?: number; completed: boolean }
+  set: LoggedSet
   trackingType: TrackingType
   weightUnit: string
   onPatch: (field: string, val: string) => void
   onToggle: () => void
   onRemove: () => void
+  onOpenNotes: () => void
 }
 
-const SetRow = ({ idx, set, trackingType, weightUnit, onPatch, onToggle, onRemove }: SetRowProps) => {
+const SetRow = ({ idx, set, trackingType, weightUnit, onPatch, onToggle, onRemove, onOpenNotes }: SetRowProps) => {
   const cols = getColConfig(trackingType)
   // Used to fire a one-shot bg pulse when the user completes a set.
   const [justCompleted, setJustCompleted] = useState(false)
@@ -527,11 +711,28 @@ const SetRow = ({ idx, set, trackingType, weightUnit, onPatch, onToggle, onRemov
           </button>
         </div>
       </div>
-      {showEst1RM && (
-        <div className="text-[10px] font-mono text-text-muted/70 text-right pr-12 mt-0.5 tabular-nums">
-          est. 1RM {est1RMDisp.toFixed(1)} {weightUnit}
-        </div>
-      )}
+      <div className="flex items-center justify-end gap-3 pr-12 mt-0.5 text-[10px] font-mono">
+        {showEst1RM && (
+          <span className="text-text-muted/70 tabular-nums">
+            est. 1RM {est1RMDisp.toFixed(1)} {weightUnit}
+          </span>
+        )}
+        {(set.rpe !== undefined && set.rpe !== null) && (
+          <span className="text-brand bg-brand/10 rounded px-1.5 py-0.5 tabular-nums">
+            RPE {set.rpe}
+          </span>
+        )}
+        <button
+          onClick={onOpenNotes}
+          aria-label="Edit set notes or RPE"
+          className={`flex items-center gap-1 transition-colors ${set.notes || set.rpe ? 'text-brand' : 'text-text-muted/60 hover:text-text-muted'}`}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
+            <path d="M12 20h9M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4z" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {set.notes ? <span className="max-w-[80px] truncate">{set.notes}</span> : <span>Note · RPE</span>}
+        </button>
+      </div>
     </div>
   )
 }
@@ -547,4 +748,99 @@ const getColConfig = (type: TrackingType): { grid: string; labels: string[]; fie
     case 'cardio':
       return { grid: 'grid-cols-[28px_1fr_1fr_44px]', labels: ['Time', 'Dist(m)'], fields: ['duration', 'distance'] }
   }
+}
+
+// ── Notes / RPE sheet (C5) ───────────────────────────────────────────────────
+
+interface NotesSheetProps {
+  sheet: { loggedExerciseId: string; set: LoggedSet } | null
+  onClose: () => void
+  onSave: (notes: string, rpe: number | null) => void
+}
+
+const NotesRpeSheet = ({ sheet, onClose, onSave }: NotesSheetProps) => (
+  <AnimatePresence>
+    {sheet && (
+      <motion.div
+        key={sheet.set.id}
+        className="fixed inset-0 z-50 flex items-end justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+        <NotesRpeSheetInner sheet={sheet} onClose={onClose} onSave={onSave} />
+      </motion.div>
+    )}
+  </AnimatePresence>
+)
+
+// Inner panel is split out so the local state resets cleanly on each open
+// (the AnimatePresence `key={sheet.set.id}` above forces remount per set).
+const NotesRpeSheetInner = ({ sheet, onClose, onSave }: NotesSheetProps) => {
+  const [notes, setNotes] = useState<string>(sheet?.set.notes ?? '')
+  const [rpe, setRpe] = useState<number | null>(sheet?.set.rpe ?? null)
+  if (!sheet) return null
+
+  return (
+    <motion.div
+      className="relative z-10 w-full max-w-lg bg-sl-surface border-t border-sl-border rounded-t-2xl p-5"
+      initial={{ y: '100%' }}
+      animate={{ y: 0 }}
+      exit={{ y: '100%' }}
+    >
+      <h3 className="text-lg font-display font-bold mb-3">Set notes</h3>
+
+      <label className="text-[11px] font-mono text-sl-muted uppercase tracking-wider block mb-1">
+        Notes (form cues, fatigue, equipment…)
+      </label>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="e.g. left arm fatigued, kept form tight"
+        rows={3}
+        className="w-full bg-sl-bg border border-sl-border rounded-lg px-3 py-2 text-sm font-mono text-sl-text outline-none focus:border-sl-purple resize-none mb-4"
+      />
+
+      <div className="flex items-baseline justify-between mb-1">
+        <label className="text-[11px] font-mono text-sl-muted uppercase tracking-wider">
+          RPE (Rate of Perceived Exertion)
+        </label>
+        <span className="text-[11px] font-mono text-brand tabular-nums">
+          {rpe === null ? '—' : `${rpe} / 10`}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={1}
+        max={10}
+        step={1}
+        value={rpe ?? 0}
+        onChange={(e) => setRpe(parseInt(e.target.value, 10))}
+        className="w-full accent-[var(--brand)] mb-1"
+      />
+      <div className="flex justify-between text-[10px] font-mono text-text-muted mb-4">
+        <span>1 easy</span>
+        <span>5 moderate</span>
+        <span>10 max</span>
+      </div>
+      {rpe !== null && (
+        <button
+          onClick={() => setRpe(null)}
+          className="text-[11px] font-mono text-text-muted hover:text-text underline mb-4"
+        >
+          Clear RPE
+        </button>
+      )}
+
+      <div className="flex gap-3">
+        <GlowButton className="flex-1" onClick={() => onSave(notes.trim(), rpe)}>
+          Save
+        </GlowButton>
+        <GlowButton variant="secondary" className="flex-1" onClick={onClose}>
+          Cancel
+        </GlowButton>
+      </div>
+    </motion.div>
+  )
 }

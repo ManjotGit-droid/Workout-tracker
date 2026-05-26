@@ -3,7 +3,7 @@ import {
   useCallback, useRef, useState,
 } from 'react'
 import type { ReactNode } from 'react'
-import type { AppState, MuscleGroupId } from '../types'
+import type { AppState, MuscleGroupId, WorkoutTemplate } from '../types'
 import type { AppAction } from './actions'
 import { appReducer } from './reducer'
 import { MUSCLE_GROUP_IDS } from '../data/muscleGroups'
@@ -38,8 +38,11 @@ const createDefaultState = (): AppState => {
     personalRecords: {},
     bodyLog: [],
     customExercises: [],
+    workoutTemplates: [],
   }
 }
+
+const TEMPLATES_LS_KEY = 'workoutTemplates'
 
 interface ContextValue {
   state: AppState
@@ -50,10 +53,10 @@ interface ContextValue {
   addExercise: (exerciseId: string) => Promise<void>
   removeExercise: (loggedExerciseId: string) => Promise<void>
   logNewSet: (loggedExerciseId: string, data: {
-    reps?: number; weight?: number; duration?: number; distance?: number; notes?: string
+    reps?: number; weight?: number; duration?: number; distance?: number; notes?: string; rpe?: number
   }) => Promise<void>
   patchSet: (loggedExerciseId: string, setId: string, patch: {
-    reps?: number; weight?: number; duration?: number; distance?: number; completed?: boolean; notes?: string
+    reps?: number; weight?: number; duration?: number; distance?: number; completed?: boolean; notes?: string; rpe?: number
   }) => Promise<void>
   removeSet: (loggedExerciseId: string, setId: string) => Promise<void>
   finishWorkout: () => Promise<void>
@@ -141,6 +144,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('weightUnit', state.weightUnit)
   }, [state.weightUnit])
 
+  // ── Workout templates: persisted to localStorage (not IDB to avoid schema bump) ─
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(TEMPLATES_LS_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as WorkoutTemplate[]
+      if (Array.isArray(parsed)) {
+        dispatch({ type: 'LOAD_TEMPLATES', templates: parsed })
+      }
+    } catch {
+      // ignore — corrupt LS just resets the list
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TEMPLATES_LS_KEY, JSON.stringify(state.workoutTemplates))
+    } catch {
+      // quota / serialization — best effort only
+    }
+  }, [state.workoutTemplates])
+
   // ── Async workout actions ────────────────────────────────────────────────
 
   const startWorkout = useCallback(async (opts?: { date?: string }) => {
@@ -167,7 +192,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   const logNewSet = useCallback(async (loggedExerciseId: string, data: {
-    reps?: number; weight?: number; duration?: number; distance?: number; notes?: string
+    reps?: number; weight?: number; duration?: number; distance?: number; notes?: string; rpe?: number
   }) => {
     const wid = workoutIdRef.current
     if (!wid) return
@@ -183,13 +208,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         distance: s.distance ?? undefined,
         completed: Boolean(s.completed),
         notes: s.notes ?? undefined,
+        rpe: s.rpe ?? undefined,
         timestamp: s.timestamp,
       },
     })
   }, [])
 
   const patchSet = useCallback(async (loggedExerciseId: string, setId: string, patch: {
-    reps?: number; weight?: number; duration?: number; distance?: number; completed?: boolean; notes?: string
+    reps?: number; weight?: number; duration?: number; distance?: number; completed?: boolean; notes?: string; rpe?: number
   }) => {
     const wid = workoutIdRef.current
     if (wid) updateSet(wid, loggedExerciseId, setId, patch).catch(console.warn)
