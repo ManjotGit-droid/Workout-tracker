@@ -6,6 +6,7 @@ import { XPBar } from '../components/progression/XPBar'
 import { LevelBadge } from '../components/progression/LevelBadge'
 import { NeonCard } from '../components/ui/NeonCard'
 import { GlowButton } from '../components/ui/GlowButton'
+import { EmptyState } from '../components/ui/EmptyState'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 
 import { getRecommendations } from '../utils/recommendations'
@@ -153,9 +154,17 @@ export const MuscleDetail = () => {
       </div>
 
       {/* Recent sessions */}
-      {recentSessions.length > 0 && (
-        <div className="px-4 mt-4 mb-4">
-          <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Recent Sessions</div>
+      <div className="px-4 mt-4 mb-4">
+        <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Recent Sessions</div>
+        {recentSessions.length === 0 ? (
+          <NeonCard className="p-1">
+            <EmptyState
+              glyph="muscle"
+              title={`No ${meta.shortName.toLowerCase()} work logged yet`}
+              subtitle="Log a workout that targets this muscle and recent sessions will appear here."
+            />
+          </NeonCard>
+        ) : (
           <div className="flex flex-col gap-1.5">
             {recentSessions.map((w) => {
               const xp = w.xpGained[muscleId] ?? 0
@@ -169,8 +178,8 @@ export const MuscleDetail = () => {
               )
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

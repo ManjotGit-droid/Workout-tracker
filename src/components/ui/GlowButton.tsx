@@ -1,6 +1,7 @@
+import { motion } from 'framer-motion'
 import type { ReactNode, ButtonHTMLAttributes } from 'react'
 
-interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface Props extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart' | 'onDragStart' | 'onDragEnd' | 'onDrag'> {
   children: ReactNode
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
@@ -19,17 +20,29 @@ const sizeStyles = {
   lg: 'px-6 py-3 text-[16px]',
 }
 
+/**
+ * Brand-styled button with a consistent press-flicker (whileTap scale).
+ *
+ * The whileTap is the "haptic visual" stand-in — phones without native
+ * haptic feedback get a quick scale dip so a tap feels confirmed.  This
+ * is in addition to the `.app-btn:active { scale(0.97) }` CSS rule, which
+ * stays as a fallback for mouse / keyboard-trigger presses.
+ */
 export const GlowButton = ({
   children,
   variant = 'primary',
   size = 'md',
   className = '',
+  disabled,
   ...props
 }: Props) => (
-  <button
+  <motion.button
+    whileTap={disabled ? undefined : { scale: 0.96 }}
+    transition={{ type: 'spring', stiffness: 600, damping: 30 }}
+    disabled={disabled}
     className={`app-btn flex items-center justify-center gap-2 ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
     {...props}
   >
     {children}
-  </button>
+  </motion.button>
 )

@@ -1,6 +1,6 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { GlowButton } from '../ui/GlowButton'
-import { PatternAnimation } from './PatternAnimation'
+import { BodyDiagram } from '../svg/BodyDiagram'
 import {
   getMovementPattern,
   PATTERN_CUES,
@@ -10,13 +10,18 @@ import { MUSCLE_GROUPS } from '../../data/muscleGroups'
 import type { Exercise, MuscleGroupId } from '../../types'
 
 /**
- * Modal showing a looping stick-figure animation of the movement pattern,
- * 3–5 form cues, the targeted muscles, and a "Watch tutorial" link that
- * opens a curated YouTube search for the specific exercise name.
+ * Modal showing the user's body diagram with the muscles targeted by this
+ * exercise highlighted + a subtle breathing pulse so it reads as "alive",
+ * 3–5 form cues for the movement pattern, the muscle chips, and a
+ * "Watch tutorial" link that opens a curated YouTube search.
  *
- * The animation works offline (it's a pure SVG). The YouTube link only
- * works when online — that's expected. We don't load anything from YouTube
- * proactively, so opening the modal stays fully local.
+ * The diagram visualisation works offline — pure local SVG. The YouTube
+ * link only fires when the user taps it; nothing is pre-fetched.
+ *
+ * The body-diagram approach replaced an earlier per-pattern stick-figure
+ * animation: showing real muscles tied to the user's training picture
+ * lands better than a generic stick figure, and the diagram already lives
+ * elsewhere in the app so the visual language stays consistent.
  */
 interface Props {
   exercise: Exercise | null
@@ -55,6 +60,12 @@ const ModalBody = ({ exercise, onClose }: { exercise: Exercise; onClose: () => v
   const primary = exercise.muscles.filter((m) => m.type === 'primary').map((m) => m.muscleId as MuscleGroupId)
   const secondary = exercise.muscles.filter((m) => m.type === 'secondary').map((m) => m.muscleId as MuscleGroupId)
   const ytUrl = youtubeSearchUrl(exercise)
+  const prefersReducedMotion = useReducedMotion()
+
+  // Primary muscles are the ones we highlight. (Secondary muscles already
+  // appear in the chip list below — adding them to the activation set tends
+  // to wash out the visual signal that "these are the main movers".)
+  const activated = primary
 
   return (
     <>
@@ -77,11 +88,21 @@ const ModalBody = ({ exercise, onClose }: { exercise: Exercise; onClose: () => v
         </button>
       </div>
 
-      {/* Animation */}
-      <div className="bg-sunken border border-border rounded-xl p-4 mb-3 flex items-center justify-center">
-        <div style={{ width: 200, height: 240 }}>
-          <PatternAnimation pattern={pattern} />
-        </div>
+      {/* Body-diagram visualization — muscles targeted by the exercise
+          glow, and the whole figure breathes gently so it reads as "alive".
+          The breathing is dropped under prefers-reduced-motion. */}
+      <div className="bg-sunken border border-border rounded-xl p-3 mb-3 flex items-center justify-center">
+        <motion.div
+          className="w-full max-w-[280px]"
+          animate={prefersReducedMotion ? undefined : { scale: [1, 1.025, 1] }}
+          transition={prefersReducedMotion ? undefined : { duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <BodyDiagram activatedMuscleIds={activated} className="max-h-72" />
+        </motion.div>
+      </div>
+
+      <div className="text-[10px] font-mono text-text-muted/70 text-center mb-3">
+        Highlighted muscles are the primary movers.
       </div>
 
       {/* Pattern label */}

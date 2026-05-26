@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 
 interface Props {
@@ -7,8 +8,7 @@ interface Props {
   onClick?: () => void
 }
 
-// Apple-style card — subtle shadow, hairline border, no neon glow.
-// `glow` prop is preserved for API compatibility but only adds a thin coloured ring.
+// Apple-style card — subtle shadow, hairline border, optional accent ring.
 const accentRing = {
   purple: 'ring-1 ring-brand/20',
   blue:   'ring-1 ring-brand/20',
@@ -16,11 +16,26 @@ const accentRing = {
   none:   '',
 }
 
-export const NeonCard = ({ children, className = '', glow = 'none', onClick }: Props) => (
-  <div
-    className={`app-card ${accentRing[glow]} ${onClick ? 'app-card-pressable cursor-pointer' : ''} ${className}`}
-    onClick={onClick}
-  >
-    {children}
-  </div>
-)
+/**
+ * Renders as a non-interactive div when `onClick` is absent.
+ * When `onClick` is provided, switches to a motion.button so we get
+ * a consistent press-flicker (whileTap scale) and proper keyboard
+ * focusability without changing visual styling.
+ */
+export const NeonCard = ({ children, className = '', glow = 'none', onClick }: Props) => {
+  const baseClass = `app-card ${accentRing[glow]} ${className}`
+  if (!onClick) {
+    return <div className={baseClass}>{children}</div>
+  }
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.985 }}
+      transition={{ type: 'spring', stiffness: 600, damping: 30 }}
+      className={`${baseClass} app-card-pressable cursor-pointer text-left w-full`}
+    >
+      {children}
+    </motion.button>
+  )
+}

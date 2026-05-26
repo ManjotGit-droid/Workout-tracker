@@ -15,7 +15,7 @@ const colorMap = {
 export const StatPill = ({ label, value, unit, color = 'default' }: Props) => (
   <div className="flex flex-col gap-0.5">
     <span className="text-xs font-mono text-sl-muted uppercase tracking-widest">{label}</span>
-    <span className={`text-xl font-mono font-medium ${colorMap[color]}`}>
+    <span className={`text-xl font-mono font-medium tabular-nums ${colorMap[color]}`}>
       {value}
       {unit && <span className="text-xs text-sl-muted ml-1">{unit}</span>}
     </span>

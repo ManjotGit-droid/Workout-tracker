@@ -6,7 +6,7 @@ const tabs = [
     to: '/',
     label: 'Home',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[22px] h-[22px]">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-[22px] h-[22px]">
         <path d="M3 12l9-9 9 9M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
@@ -16,7 +16,7 @@ const tabs = [
     label: 'Train',
     icon: (
       // Dumbbell: two weight stacks bracketing a central bar
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[22px] h-[22px]">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-[22px] h-[22px]">
         <path d="M4 9v6M7 6v12M17 6v12M20 9v6M7 12h10" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
@@ -25,7 +25,7 @@ const tabs = [
     to: '/plans',
     label: 'Plans',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[22px] h-[22px]">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-[22px] h-[22px]">
         <rect x="4" y="3" width="16" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M9 8h6M9 12h6M9 16h4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
@@ -35,7 +35,7 @@ const tabs = [
     to: '/exercises',
     label: 'Library',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[22px] h-[22px]">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-[22px] h-[22px]">
         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20v-13H6.5A2.5 2.5 0 0 0 4 6.5v13z" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 22H20" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
@@ -45,7 +45,7 @@ const tabs = [
     to: '/progress',
     label: 'Progress',
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[22px] h-[22px]">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-[22px] h-[22px]">
         <path d="M3 17l6-6 4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M14 7h7v7" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
@@ -59,7 +59,7 @@ export const BottomNav = () => {
   const hasActiveWorkout = !!state.activeWorkout
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-elevated/85 backdrop-blur-xl border-t border-border safe-bottom theme-fade">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-elevated/85 backdrop-blur-xl border-t border-border safe-bottom theme-fade glass-inner-highlight">
       <div className="flex max-w-md mx-auto">
         {tabs.map((tab) => {
           const isActive = tab.to === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.to)

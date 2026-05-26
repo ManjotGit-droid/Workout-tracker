@@ -23,8 +23,8 @@ export const XPBar = ({
     <div className="w-full">
       {showLabel && (
         <div className="flex justify-between items-baseline mb-1">
-          <span className="text-xs font-mono text-sl-muted">Level {level}</span>
-          <span className="text-xs font-mono text-sl-muted">
+          <span className="text-xs font-mono text-sl-muted tabular-nums">Level {level}</span>
+          <span className="text-xs font-mono text-sl-muted tabular-nums">
             {xp.toLocaleString()} / {xpToNext.toLocaleString()} XP
           </span>
         </div>

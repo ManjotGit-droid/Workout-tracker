@@ -68,8 +68,10 @@
   --accent-ink:   #000814;
   --accent-soft:  rgba(0, 245, 255, 0.18);
 
-  --brand:        #00d4ff;
-  --brand-soft:   rgba(0, 212, 255, 0.20);
+  /* Brand desaturated slightly vs. light mode for WCAG AA on small text
+     (#00d4ff was borderline against --bg / --text-muted at 12px). */
+  --brand:        #38c6f0;
+  --brand-soft:   rgba(56, 198, 240, 0.20);
   --brand-bright: #6ee7ff;
 
   --gold:         #fbbf24;
@@ -256,4 +258,75 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(var(--inv
   color: transparent;
   animation: sheenSlide 5s linear infinite;
   text-shadow: 0 0 14px rgba(0, 212, 255, 0.35);
+}
+
+/* ============================================================
+   ACCESSIBILITY
+   ============================================================ */
+
+/* Visible keyboard focus ring on every interactive primitive.
+   Uses :focus-visible so mouse / touch presses don't get an outline,
+   only keyboard navigation and the assistive-tech focus path. */
+.app-btn:focus-visible,
+.app-card-pressable:focus-visible,
+button:focus-visible,
+[role="switch"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+/* Inputs get an inset ring instead of an outline so the layout
+   doesn't shift when focus moves through a form. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--brand);
+}
+
+/* Soft-glass inner highlight for translucent surfaces (BottomNav,
+   PageHeader sticky bars). Subtle 1 px top-edge bright line that
+   reads as glass on dark backgrounds. */
+.glass-inner-highlight {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.20);
+}
+:root[data-theme="light"] .glass-inner-highlight {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 0 rgba(0, 80, 200, 0.04);
+}
+
+/* Set-completed row pulse — single-shot. The `.set-row-pulse` class is
+   toggled briefly on a SetRow when the user marks a set complete. */
+@keyframes setRowPulse {
+  0%   { background: var(--brand-soft); }
+  60%  { background: var(--brand-soft); }
+  100% { background: transparent; }
+}
+.set-row-pulse {
+  animation: setRowPulse 0.6s ease-out forwards;
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+/* Honour the OS-level "Reduce motion" preference. We don't kill all
+   animations (a static page is jarring); we just shorten them so the
+   end-state appears almost immediately. Framer-motion components that
+   drive *looping* animations need to be gated separately via the
+   `useReducedMotion()` hook — see PatternAnimation.tsx and the body
+   diagram. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

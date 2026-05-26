@@ -5,10 +5,21 @@ import { BodyDiagram } from '../components/svg/BodyDiagram'
 import { RankBadge } from '../components/progression/RankBadge'
 import { NeonCard } from '../components/ui/NeonCard'
 import { GlowButton } from '../components/ui/GlowButton'
+import { EmptyState } from '../components/ui/EmptyState'
 import { RANK_COLORS } from '../data/levelConfig'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { formatDate } from '../utils/formatters'
 import type { MuscleGroupId } from '../types'
+
+// Stagger variants reused for the top-muscles and recent-sessions lists.
+const listContainer = {
+  hidden: { opacity: 1 },
+  show: { opacity: 1, transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
+}
+const listItem = {
+  hidden: { y: 6, opacity: 0 },
+  show: { y: 0, opacity: 1, transition: { duration: 0.25, ease: 'easeOut' as const } },
+}
 
 export const Dashboard = () => {
   const { state } = useAppStore()
@@ -71,18 +82,28 @@ export const Dashboard = () => {
         </NeonCard>
       </div>
 
-      {/* Stats row */}
-      <div className="px-4 mb-4 grid grid-cols-3 gap-3">
-        <NeonCard className="p-3 text-center">
-          <div className="text-xl font-mono font-bold text-sl-purple">{profile.totalWorkouts}</div>
-          <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Workouts</div>
+      {/* Stats — bento layout: Workouts on top (hero), Sets + Top Level below */}
+      <div className="px-4 mb-4 grid grid-cols-2 gap-3">
+        <NeonCard className="col-span-2 p-4 flex items-center justify-between" glow="purple">
+          <div>
+            <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mb-1">Workouts</div>
+            <div className="text-3xl font-mono font-bold text-sl-purple tabular-nums">
+              {profile.totalWorkouts}
+            </div>
+            <div className="text-[11px] font-mono text-text-muted mt-0.5">
+              {profile.workoutHistory.length > 0 ? `Last: ${formatDate(profile.workoutHistory[0].date)}` : 'No sessions yet'}
+            </div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-10 h-10 text-sl-purple/60">
+            <path d="M4 9v6M7 6v12M17 6v12M20 9v6M7 12h10" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </NeonCard>
         <NeonCard className="p-3 text-center">
-          <div className="text-xl font-mono font-bold text-sl-blue">{profile.totalSets}</div>
+          <div className="text-2xl font-mono font-bold text-sl-blue tabular-nums">{profile.totalSets}</div>
           <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Sets</div>
         </NeonCard>
-        <NeonCard className="p-3 text-center" onClick={() => navigate('/muscles/' + topMuscles[0]?.id)}>
-          <div className="text-xl font-mono font-bold text-sl-gold">
+        <NeonCard className="p-3 text-center" onClick={() => topMuscles[0] && navigate('/muscles/' + topMuscles[0].id)}>
+          <div className="text-2xl font-mono font-bold text-sl-gold tabular-nums">
             {Math.max(...Object.values(profile.muscleGroups).map((m) => m.level))}
           </div>
           <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Top Level</div>
@@ -107,13 +128,18 @@ export const Dashboard = () => {
       {/* Top muscles */}
       <div className="px-4 mb-4">
         <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Strongest Muscles</div>
-        <div className="flex flex-col gap-2">
+        <motion.div
+          className="flex flex-col gap-2"
+          variants={listContainer}
+          initial="hidden"
+          animate="show"
+        >
           {topMuscles.map((muscle) => {
             const meta = MUSCLE_GROUPS[muscle.id]
             const pct = Math.min(100, (muscle.xp / muscle.xpToNextLevel) * 100)
             return (
+              <motion.div key={muscle.id} variants={listItem}>
               <NeonCard
-                key={muscle.id}
                 className="p-3 flex items-center gap-3"
                 onClick={() => navigate(`/muscles/${muscle.id}`)}
               >
@@ -139,16 +165,37 @@ export const Dashboard = () => {
                   <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </NeonCard>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       </div>
 
       {/* Recent workouts */}
-      {recentWorkouts.length > 0 && (
-        <div className="px-4 mb-6">
-          <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Recent Sessions</div>
-          <div className="flex flex-col gap-2">
+      <div className="px-4 mb-6">
+        <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Recent Sessions</div>
+        {recentWorkouts.length === 0 ? (
+          <NeonCard className="p-1">
+            <EmptyState
+              glyph="history"
+              title="No sessions yet"
+              subtitle="Once you log a workout it'll show up here so you can scroll your last few at a glance."
+              action={
+                !activeWorkout && (
+                  <GlowButton size="sm" onClick={() => navigate('/workout')}>
+                    Log your first workout
+                  </GlowButton>
+                )
+              }
+            />
+          </NeonCard>
+        ) : (
+          <motion.div
+            className="flex flex-col gap-2"
+            variants={listContainer}
+            initial="hidden"
+            animate="show"
+          >
             {recentWorkouts.map((w) => {
               const workedMuscles = Object.keys(w.xpGained) as MuscleGroupId[]
               const exerciseNames = w.exercises
@@ -159,7 +206,8 @@ export const Dashboard = () => {
                 .slice(0, 3)
 
               return (
-                <NeonCard key={w.id} className="p-3">
+                <motion.div key={w.id} variants={listItem}>
+                <NeonCard className="p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-mono text-sl-muted">{formatDate(w.date)}</div>
@@ -181,11 +229,12 @@ export const Dashboard = () => {
                     </div>
                   </div>
                 </NeonCard>
+                </motion.div>
               )
             })}
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </div>
     </div>
   )
 }

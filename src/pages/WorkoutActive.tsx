@@ -455,6 +455,8 @@ type SetRowProps = {
 
 const SetRow = ({ idx, set, trackingType, weightUnit, onPatch, onToggle, onRemove }: SetRowProps) => {
   const cols = getColConfig(trackingType)
+  // Used to fire a one-shot bg pulse when the user completes a set.
+  const [justCompleted, setJustCompleted] = useState(false)
 
   const displayValue = (field: string): string => {
     if (field === 'reps') return String(set.reps ?? 10)
@@ -467,9 +469,18 @@ const SetRow = ({ idx, set, trackingType, weightUnit, onPatch, onToggle, onRemov
     return ''
   }
 
+  const handleToggle = () => {
+    if (!set.completed) {
+      // Only pulse on completion, not on uncomplete.
+      setJustCompleted(true)
+      window.setTimeout(() => setJustCompleted(false), 650)
+    }
+    onToggle()
+  }
+
   return (
-    <div className={`grid ${cols.grid} gap-2 items-center mb-1.5 rounded-lg px-1 py-1 transition-colors ${set.completed ? 'bg-sl-purple/10' : ''}`}>
-      <span className="text-xs font-mono text-sl-muted text-center">{idx + 1}</span>
+    <div className={`grid ${cols.grid} gap-2 items-center mb-1.5 rounded-lg px-1 py-1 transition-colors ${set.completed ? 'bg-sl-purple/10' : ''} ${justCompleted ? 'set-row-pulse' : ''}`}>
+      <span className="text-xs font-mono text-sl-muted text-center tabular-nums">{idx + 1}</span>
       {cols.fields.map((field) => (
         <input
           key={field}
@@ -478,21 +489,30 @@ const SetRow = ({ idx, set, trackingType, weightUnit, onPatch, onToggle, onRemov
           defaultValue={displayValue(field)}
           placeholder={field === 'duration' ? '0:00' : field === 'distance' ? 'm' : '0'}
           onBlur={(e) => onPatch(field, e.target.value)}
-          className="bg-sl-border/50 border border-sl-border rounded px-2 py-1 text-sm font-mono text-center text-sl-text focus:border-sl-purple outline-none w-full"
+          className="bg-sl-border/50 border border-sl-border rounded px-2 py-1 text-sm font-mono text-center text-sl-text focus:border-sl-purple outline-none w-full tabular-nums"
         />
       ))}
       <div className="flex gap-1">
         <button
-          onClick={onToggle}
+          onClick={handleToggle}
+          aria-label={set.completed ? 'Unmark set complete' : 'Mark set complete'}
+          aria-pressed={set.completed}
           className={`w-7 h-8 rounded-lg border flex items-center justify-center transition-all ${
             set.completed ? 'bg-sl-purple border-sl-purple text-white' : 'border-sl-border text-sl-muted hover:border-sl-purple'
           }`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
-            <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+            <motion.path
+              d="M5 13l4 4L19 7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={false}
+              animate={{ pathLength: set.completed ? 1 : 0, opacity: set.completed ? 1 : 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+            />
           </svg>
         </button>
-        <button onClick={onRemove} className="w-5 h-8 flex items-center justify-center text-sl-muted hover:text-sl-danger opacity-40 hover:opacity-100 transition-opacity">
+        <button onClick={onRemove} aria-label="Remove set" className="w-5 h-8 flex items-center justify-center text-sl-muted hover:text-sl-danger opacity-40 hover:opacity-100 transition-opacity">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
             <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
           </svg>
