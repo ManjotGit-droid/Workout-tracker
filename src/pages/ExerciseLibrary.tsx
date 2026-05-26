@@ -8,6 +8,7 @@ import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { EXERCISES as SEED_EXERCISES } from '../data/exercises'
 import { fromKg, formatDate } from '../utils/formatters'
 import { createExercise, updateExercise, deleteExercise } from '../api/exercises'
+import { ExerciseDemoModal } from '../components/exercise-vis/ExerciseDemoModal'
 import type { Exercise, MuscleGroupId, ExerciseCategory, Equipment, TrackingType } from '../types'
 
 const CATEGORIES: ExerciseCategory[] = ['push', 'pull', 'legs', 'core', 'compound', 'cardio']
@@ -68,6 +69,9 @@ export const ExerciseLibrary = () => {
   // Delete confirm modal
   const [confirmDelete, setConfirmDelete] = useState<Exercise | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Form-demo modal
+  const [demoExercise, setDemoExercise] = useState<Exercise | null>(null)
 
   // Set of seed exercise IDs — used to distinguish user-added from built-in
   const seedIds = useMemo(() => new Set(SEED_EXERCISES.map((e) => e.id)), [])
@@ -263,6 +267,16 @@ export const ExerciseLibrary = () => {
                   </div>
                   <div className="flex flex-col gap-1.5 flex-shrink-0">
                     <button
+                      className="text-xs font-mono text-sl-muted hover:text-brand border border-sl-border hover:border-brand/40 rounded-lg px-2 py-1 transition-colors flex items-center justify-center gap-1"
+                      onClick={() => setDemoExercise(ex)}
+                      aria-label={`Show how to perform ${ex.name}`}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
+                        <polygon points="5 3 19 12 5 21 5 3" strokeLinejoin="round" />
+                      </svg>
+                      Form
+                    </button>
+                    <button
                       className="text-xs font-mono text-sl-muted hover:text-sl-purple border border-sl-border hover:border-sl-purple/40 rounded-lg px-2 py-1 transition-colors"
                       onClick={() => { const m = ex.muscles.find((m) => m.type === 'primary'); if (m) navigate(`/muscles/${m.muscleId}`) }}
                     >
@@ -403,6 +417,9 @@ export const ExerciseLibrary = () => {
           </div>
         </div>
       )}
+
+      {/* Form-demo modal */}
+      <ExerciseDemoModal exercise={demoExercise} onClose={() => setDemoExercise(null)} />
     </div>
   )
 }

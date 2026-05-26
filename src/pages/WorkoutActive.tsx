@@ -8,7 +8,8 @@ import { GlowButton } from '../components/ui/GlowButton'
 import { NeonCard } from '../components/ui/NeonCard'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { toKg } from '../utils/formatters'
-import type { MuscleGroupId, TrackingType } from '../types'
+import { ExerciseDemoModal } from '../components/exercise-vis/ExerciseDemoModal'
+import type { Exercise, MuscleGroupId, TrackingType } from '../types'
 
 // Format seconds → mm:ss display
 const fmtDuration = (secs: number): string => {
@@ -56,6 +57,7 @@ export const WorkoutActive = () => {
   const searchRef = useRef<HTMLInputElement>(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [startDate, setStartDate] = useState<string>(todayStr)
+  const [demoExercise, setDemoExercise] = useState<Exercise | null>(null)
 
   const allExercises = state.customExercises
   const isBackdated = !!activeWorkout && activeWorkout.date !== todayStr
@@ -275,14 +277,27 @@ export const WorkoutActive = () => {
                           {primaryMuscles.join(' · ')}
                         </div>
                       </div>
-                      <button
-                        className="text-sl-muted hover:text-sl-danger p-1"
-                        onClick={() => removeExercise(loggedEx.id)}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-                          <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
-                        </svg>
-                      </button>
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
+                        <button
+                          className="text-text-muted hover:text-brand p-1"
+                          onClick={() => setDemoExercise(ex)}
+                          aria-label={`Show how to perform ${ex.name}`}
+                          title="How to perform"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                            <polygon points="5 3 19 12 5 21 5 3" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                        <button
+                          className="text-sl-muted hover:text-sl-danger p-1"
+                          onClick={() => removeExercise(loggedEx.id)}
+                          aria-label="Remove exercise"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                            <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Sets */}
@@ -408,6 +423,9 @@ export const WorkoutActive = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Form-demo modal */}
+      <ExerciseDemoModal exercise={demoExercise} onClose={() => setDemoExercise(null)} />
     </div>
   )
 }
