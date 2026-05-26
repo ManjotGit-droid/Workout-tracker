@@ -10,6 +10,9 @@ import { ANIME_PLANS } from '../data/animePlans'
 import type { AnimePlan, DayOfWeek, PlanWorkout } from '../data/animePlans'
 import { generateMonthlyPlan } from '../utils/monthlyPlan'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
+import { MobilityView } from '../components/mobility/MobilityView'
+
+type PlansView = 'workouts' | 'mobility'
 
 const DAYS: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const DAY_SHORT: Record<DayOfWeek, string> = {
@@ -45,6 +48,7 @@ export const WorkoutPlans = () => {
   const [starting, setStarting] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 })
   const [recommendedExpanded, setRecommendedExpanded] = useState(false)
+  const [view, setView] = useState<PlansView>('workouts')
 
   const allExercises = state.customExercises
 
@@ -253,8 +257,39 @@ export const WorkoutPlans = () => {
   // ── Plan grid view ──────────────────────────────────────────────────────
   return (
     <div className="min-h-screen">
-      <PageHeader title="Workout Plans" subtitle="Recommended + anime-inspired programs" />
+      <PageHeader
+        title={view === 'mobility' ? 'Mobility' : 'Workout Plans'}
+        subtitle={view === 'mobility'
+          ? 'Weekly stretching that adapts to your training'
+          : 'Recommended + anime-inspired programs'}
+      />
 
+      {/* View toggle */}
+      <div className="px-4 pt-3">
+        <div className="inline-flex p-1 rounded-full bg-sunken border border-border">
+          {(['workouts', 'mobility'] as PlansView[]).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`px-4 py-1.5 rounded-full text-[12px] font-mono uppercase tracking-widest transition-colors ${
+                view === v
+                  ? 'bg-brand text-white shadow-button'
+                  : 'text-text-muted hover:text-text'
+              }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {view === 'mobility' && (
+        <div className="px-4 py-3 pb-24">
+          <MobilityView />
+        </div>
+      )}
+
+      {view === 'workouts' && (
       <div className="px-4 py-3 pb-24">
 
         {/* ── RECOMMENDED FOR YOU (collapsible) ───────────────────────── */}
@@ -403,6 +438,7 @@ export const WorkoutPlans = () => {
           ))}
         </div>
       </div>
+      )}
     </div>
   )
 }
