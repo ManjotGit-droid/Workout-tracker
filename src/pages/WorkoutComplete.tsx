@@ -98,9 +98,7 @@ export const WorkoutComplete = () => {
     <div className="min-h-screen pb-8">
       {/* Hero */}
       <div className="relative overflow-hidden bg-gradient-to-b from-sl-purple/20 to-sl-bg pt-8 pb-4 px-4 text-center">
-        {newPrExerciseIds.length > 0 && (
-          <Confetti label={newPrExerciseIds.length === 1 ? 'New PR' : `${newPrExerciseIds.length} new PRs`} />
-        )}
+        {newPrExerciseIds.length > 0 && <Confetti />}
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

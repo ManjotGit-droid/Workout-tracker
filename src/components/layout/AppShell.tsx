@@ -4,8 +4,6 @@ import { BottomNav } from './BottomNav'
 import { BackupBanner } from './BackupBanner'
 import { QuickAddFab } from './QuickAddFab'
 import { LevelUpModal } from '../progression/LevelUpModal'
-import { ThemeToggle } from '../ui/ThemeToggle'
-import { UserPill } from '../ui/UserPill'
 import { OnboardingCarousel } from '../onboarding/OnboardingCarousel'
 import { InstallPrompt } from '../install/InstallPrompt'
 import { useAppStore } from '../../store/AppContext'
@@ -33,11 +31,9 @@ export const AppShell = () => {
         <Outlet />
       </main>
 
-      {/* Bottom-left floating controls — never block page content */}
-      <div className="fixed left-3 bottom-[78px] z-40 safe-bottom flex items-center gap-2">
-        <ThemeToggle />
-        <UserPill />
-      </div>
+      {/* Theme and Profile have moved into the Settings page (gear icon on
+          the Dashboard). Floating controls were removed so the bottom area
+          stays clean for the FAB and BottomNav. */}
 
       <QuickAddFab />
       <BottomNav />

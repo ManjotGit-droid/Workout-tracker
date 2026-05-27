@@ -1,18 +1,9 @@
-import { useState, useRef } from 'react'
-import {
-  isAutoBackupEnabled,
-  setAutoBackupEnabled,
-  getLastBackupAt,
-  daysUntilNextBackup,
-  runBackupNow,
-} from '../utils/autoBackup'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAppStore } from '../store/AppContext'
-import { exportData, importData, resetData } from '../api/data'
 import { PageHeader } from '../components/layout/PageHeader'
 import { NeonCard } from '../components/ui/NeonCard'
-import { GlowButton } from '../components/ui/GlowButton'
 import { EmptyState } from '../components/ui/EmptyState'
 import { LevelBadge } from '../components/progression/LevelBadge'
 import { XPBar } from '../components/progression/XPBar'
@@ -28,53 +19,13 @@ import { useLongPress } from '../hooks/useLongPress'
 import { evaluateAchievements, TIER_STYLES } from '../utils/achievements'
 import type { Exercise, WorkoutSession } from '../types'
 
-type Tab = 'muscles' | 'records' | 'body' | 'charts' | 'history' | 'data'
+type Tab = 'muscles' | 'records' | 'body' | 'charts' | 'history'
 
 export const Progress = () => {
   const { state } = useAppStore()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('muscles')
-  const [dataMsg, setDataMsg] = useState('')
-  const [resetting, setResetting] = useState(false)
-  const importRef = useRef<HTMLInputElement>(null)
-  const [autoBackup, setAutoBackup] = useState<boolean>(() => isAutoBackupEnabled())
-  const [lastBackupAt, setLastBackupAt] = useState<number | null>(() => getLastBackupAt())
-  const [backupRunning, setBackupRunning] = useState(false)
   const [contextWorkout, setContextWorkout] = useState<WorkoutSession | null>(null)
-
-  const handleToggleAutoBackup = () => {
-    const next = !autoBackup
-    setAutoBackupEnabled(next)
-    setAutoBackup(next)
-  }
-
-  const handleBackupNow = async () => {
-    if (backupRunning) return
-    setBackupRunning(true)
-    try {
-      await runBackupNow()
-      setLastBackupAt(getLastBackupAt())
-      setDataMsg('Backup saved')
-    } catch {
-      setDataMsg('Backup failed')
-    } finally {
-      setBackupRunning(false)
-    }
-  }
-
-  const lastBackupLabel = lastBackupAt
-    ? new Date(lastBackupAt).toLocaleDateString()
-    : 'Never'
-  const nextBackupLabel = autoBackup
-    ? lastBackupAt === null
-      ? 'Due now'
-      : (() => {
-          const d = daysUntilNextBackup()
-          if (d <= 0) return 'Due now'
-          if (d === 1) return 'In 1 day'
-          return `In ${d} days`
-        })()
-    : 'Off'
 
   const allExercises = state.customExercises
 
@@ -96,7 +47,7 @@ export const Progress = () => {
 
       {/* Tabs */}
       <div className="flex border-b border-sl-border overflow-x-auto hide-scrollbar">
-        {(['muscles', 'records', 'history', 'body', 'charts', 'data'] as Tab[]).map((t) => (
+        {(['muscles', 'records', 'history', 'body', 'charts'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -305,114 +256,6 @@ export const Progress = () => {
 
         {/* ── CHARTS TAB ── */}
         {tab === 'charts' && <ChartsTab />}
-
-        {/* Data Management Tab */}
-        {tab === 'data' && (
-          <div className="flex flex-col gap-4">
-            <NeonCard className="p-4">
-              <h3 className="text-sm font-display font-bold mb-1">Export Data</h3>
-              <p className="text-xs font-mono text-sl-muted mb-3">Download all your workouts and exercises as a JSON backup.</p>
-              <GlowButton size="sm" variant="secondary" onClick={() => exportData().catch(() => setDataMsg('Export failed'))}>
-                Download Backup
-              </GlowButton>
-            </NeonCard>
-
-            <NeonCard className="p-4">
-              <div className="flex items-center justify-between gap-3 mb-1.5">
-                <h3 className="text-sm font-display font-bold">Monthly Auto-Backup</h3>
-                <button
-                  role="switch"
-                  aria-checked={autoBackup}
-                  aria-label="Toggle monthly auto-backup"
-                  onClick={handleToggleAutoBackup}
-                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
-                    autoBackup ? 'bg-brand' : 'bg-sunken border border-border'
-                  }`}
-                >
-                  <span
-                    className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
-                      autoBackup ? 'translate-x-[22px]' : 'translate-x-0.5'
-                    }`}
-                    style={{ transform: `translateY(-50%) translateX(${autoBackup ? '22px' : '2px'})` }}
-                  />
-                </button>
-              </div>
-              <p className="text-xs font-mono text-sl-muted leading-relaxed">
-                A banner appears every 30 days asking you to save a fresh backup. One tap and it downloads — keeps your data safe across phone wipes or app reinstalls.
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-sl-muted mt-3 mb-3">
-                <div>
-                  <div className="text-text-muted/70 uppercase tracking-wider text-[9px]">Last backup</div>
-                  <div className="text-text">{lastBackupLabel}</div>
-                </div>
-                <div>
-                  <div className="text-text-muted/70 uppercase tracking-wider text-[9px]">Next due</div>
-                  <div className="text-text">{nextBackupLabel}</div>
-                </div>
-              </div>
-              <GlowButton size="sm" variant="secondary" disabled={backupRunning} onClick={handleBackupNow}>
-                {backupRunning ? 'Saving…' : 'Backup now'}
-              </GlowButton>
-            </NeonCard>
-
-            <NeonCard className="p-4">
-              <h3 className="text-sm font-display font-bold mb-1">Import Data</h3>
-              <p className="text-xs font-mono text-sl-muted mb-3">Restore from a previously exported JSON backup. This replaces all current data.</p>
-              <input
-                ref={importRef}
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-                  try {
-                    const result = await importData(file)
-                    setDataMsg(`Imported ${result.imported.workouts} workouts, ${result.imported.exercises} exercises`)
-                    window.location.reload()
-                  } catch {
-                    setDataMsg('Import failed — invalid backup file')
-                  }
-                }}
-              />
-              <GlowButton size="sm" variant="secondary" onClick={() => importRef.current?.click()}>
-                Choose Backup File
-              </GlowButton>
-            </NeonCard>
-
-            <NeonCard className="p-4">
-              <h3 className="text-sm font-display font-bold mb-1 text-sl-red">Reset All Data</h3>
-              <p className="text-xs font-mono text-sl-muted mb-3">Delete all workouts and muscle XP. Exercise library is kept.</p>
-              {!resetting ? (
-                <GlowButton size="sm" variant="danger" onClick={() => setResetting(true)}>
-                  Reset Data
-                </GlowButton>
-              ) : (
-                <div className="flex gap-2">
-                  <GlowButton
-                    size="sm"
-                    variant="danger"
-                    onClick={async () => {
-                      await resetData()
-                      setResetting(false)
-                      setDataMsg('Data reset complete')
-                      window.location.reload()
-                    }}
-                  >
-                    Confirm Reset
-                  </GlowButton>
-                  <GlowButton size="sm" variant="secondary" onClick={() => setResetting(false)}>
-                    Cancel
-                  </GlowButton>
-                </div>
-              )}
-            </NeonCard>
-
-            {dataMsg && (
-              <div className="text-xs font-mono text-sl-muted text-center py-2">{dataMsg}</div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   )

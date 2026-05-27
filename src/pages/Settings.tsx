@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   isAutoBackupEnabled,
   setAutoBackupEnabled,
@@ -8,6 +9,7 @@ import {
 } from '../utils/autoBackup'
 import { useAppStore } from '../store/AppContext'
 import { useTheme } from '../store/ThemeContext'
+import { useUsers } from '../store/UserContext'
 import { useToast } from '../components/ui/Toast'
 import { exportData, importData, resetData } from '../api/data'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -16,17 +18,35 @@ import { GlowButton } from '../components/ui/GlowButton'
 
 const APP_VERSION = '1.0.0'
 const REPO_URL = 'https://github.com/ManjotGit-droid/Workout-tracker'
+const REST_DURATION_KEY = 'restDurationSec'
+const DEFAULT_REST_SEC = 90
+const REST_PRESETS_SEC = [30, 60, 90, 120, 180, 240]
 
 export const Settings = () => {
   const { state, dispatch } = useAppStore()
   const { theme, setTheme } = useTheme()
+  const { users, activeUser } = useUsers()
   const { toast } = useToast()
+  const navigate = useNavigate()
 
   const [autoBackup, setAutoBackup] = useState<boolean>(() => isAutoBackupEnabled())
   const [lastBackupAt, setLastBackupAt] = useState<number | null>(() => getLastBackupAt())
   const [backupRunning, setBackupRunning] = useState(false)
   const [resetting, setResetting] = useState(false)
   const importRef = useRef<HTMLInputElement>(null)
+
+  // Default rest-timer duration: persisted in localStorage; WorkoutActive
+  // reads the same key when it boots, so changes here apply to the next
+  // workout (or right now if no rest is currently running).
+  const [restDuration, setRestDurationState] = useState<number>(() => {
+    const stored = parseInt(localStorage.getItem(REST_DURATION_KEY) ?? '', 10)
+    return Number.isFinite(stored) && stored > 0 ? stored : DEFAULT_REST_SEC
+  })
+
+  const setRestDuration = (sec: number) => {
+    setRestDurationState(sec)
+    localStorage.setItem(REST_DURATION_KEY, String(sec))
+  }
 
   const handleToggleAutoBackup = () => {
     const next = !autoBackup
@@ -77,16 +97,51 @@ export const Settings = () => {
         })()
     : 'Off'
 
+  const initials = activeUser?.name?.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || '?'
+  const fmtRest = (s: number) => s < 60 ? `${s}s` : `${(s / 60).toFixed(s % 60 === 0 ? 0 : 1)}m`
+
   return (
     <div className="min-h-screen pb-8">
       <PageHeader title="Settings" back />
 
       <div className="px-4 py-3 flex flex-col gap-4">
-        {/* Appearance */}
+        {/* ── Profile ───────────────────────────────────────── */}
+        <SectionLabel>Profile</SectionLabel>
         <NeonCard className="p-4">
-          <h3 className="text-sm font-display font-bold mb-1">Appearance</h3>
+          <button
+            onClick={() => navigate('/users')}
+            className="w-full flex items-center gap-3 text-left"
+            aria-label="Manage profiles"
+          >
+            <span
+              className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, var(--brand), var(--accent))',
+                color: 'var(--accent-ink)',
+              }}
+            >
+              {initials}
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-display font-semibold truncate">
+                {activeUser?.name ?? 'Profile'}
+              </div>
+              <div className="text-[11px] font-mono text-text-muted">
+                {users.length === 1 ? 'Active profile' : `${users.length} profiles · tap to manage`}
+              </div>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-text-muted flex-shrink-0">
+              <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </NeonCard>
+
+        {/* ── Appearance ────────────────────────────────────── */}
+        <SectionLabel>Appearance</SectionLabel>
+        <NeonCard className="p-4">
+          <h3 className="text-sm font-display font-bold mb-1">Theme</h3>
           <p className="text-xs font-mono text-text-muted mb-3">
-            Theme follows the chosen mode immediately. Reduce-motion is honoured automatically from your OS settings.
+            Reduce-motion is honoured automatically from your OS settings.
           </p>
           <div className="flex gap-2">
             {(['light', 'dark'] as const).map((t) => (
@@ -103,7 +158,8 @@ export const Settings = () => {
           </div>
         </NeonCard>
 
-        {/* Units */}
+        {/* ── Workout ───────────────────────────────────────── */}
+        <SectionLabel>Workout</SectionLabel>
         <NeonCard className="p-4">
           <h3 className="text-sm font-display font-bold mb-1">Weight unit</h3>
           <p className="text-xs font-mono text-text-muted mb-3">
@@ -124,7 +180,31 @@ export const Settings = () => {
           </div>
         </NeonCard>
 
-        {/* Backup */}
+        <NeonCard className="p-4">
+          <div className="flex items-baseline justify-between mb-1">
+            <h3 className="text-sm font-display font-bold">Default rest timer</h3>
+            <span className="text-xs font-mono text-brand tabular-nums">{fmtRest(restDuration)}</span>
+          </div>
+          <p className="text-xs font-mono text-text-muted mb-3">
+            How long the timer counts down by default after you mark a set complete. You can still ±15&nbsp;s during a rest.
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {REST_PRESETS_SEC.map((s) => (
+              <button
+                key={s}
+                onClick={() => setRestDuration(s)}
+                className={`py-2 rounded-lg border text-sm font-mono tabular-nums transition-colors ${
+                  restDuration === s ? 'bg-brand border-brand text-white' : 'border-border text-text-muted hover:border-brand/40'
+                }`}
+              >
+                {fmtRest(s)}
+              </button>
+            ))}
+          </div>
+        </NeonCard>
+
+        {/* ── Backup ────────────────────────────────────────── */}
+        <SectionLabel>Backup</SectionLabel>
         <NeonCard className="p-4">
           <div className="flex items-center justify-between gap-3 mb-1.5">
             <h3 className="text-sm font-display font-bold">Monthly auto-backup</h3>
@@ -161,7 +241,8 @@ export const Settings = () => {
           </GlowButton>
         </NeonCard>
 
-        {/* Data — export / import / reset */}
+        {/* ── Data ──────────────────────────────────────────── */}
+        <SectionLabel>Data</SectionLabel>
         <NeonCard className="p-4">
           <h3 className="text-sm font-display font-bold mb-1">Export / import</h3>
           <p className="text-xs font-mono text-text-muted mb-3">
@@ -194,11 +275,12 @@ export const Settings = () => {
           </div>
         </NeonCard>
 
-        {/* Danger zone */}
+        {/* ── Danger zone ───────────────────────────────────── */}
+        <SectionLabel>Danger zone</SectionLabel>
         <NeonCard className="p-4">
-          <h3 className="text-sm font-display font-bold mb-1 text-danger">Danger zone</h3>
+          <h3 className="text-sm font-display font-bold mb-1 text-danger">Reset all data</h3>
           <p className="text-xs font-mono text-text-muted mb-3">
-            Reset deletes all workouts and muscle XP. Custom exercises stay.
+            Deletes all workouts and muscle XP. Custom exercises stay. This cannot be undone.
           </p>
           {!resetting ? (
             <GlowButton size="sm" variant="danger" onClick={() => setResetting(true)}>
@@ -224,33 +306,34 @@ export const Settings = () => {
           )}
         </NeonCard>
 
-        {/* Debug / onboarding */}
+        {/* ── About ─────────────────────────────────────────── */}
+        <SectionLabel>About</SectionLabel>
         <NeonCard className="p-4">
-          <h3 className="text-sm font-display font-bold mb-1">Show onboarding again</h3>
-          <p className="text-xs font-mono text-text-muted mb-3">
-            Replays the first-launch intro on next page load.
-          </p>
-          <GlowButton size="sm" variant="secondary" onClick={handleResetOnboarding}>
-            Reset onboarding
-          </GlowButton>
-        </NeonCard>
-
-        {/* About */}
-        <NeonCard className="p-4">
-          <h3 className="text-sm font-display font-bold mb-1">About</h3>
+          <h3 className="text-sm font-display font-bold mb-1">Solo Gym Tracker</h3>
           <p className="text-xs font-mono text-text-muted mb-2">
-            Solo Gym Tracker — fully offline PWA. Version {APP_VERSION}.
+            Fully offline PWA. Version {APP_VERSION}.
           </p>
           <a
             href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] font-mono text-brand hover:underline"
+            className="text-[11px] font-mono text-brand hover:underline block mb-3"
           >
             Source on GitHub →
           </a>
+          <GlowButton size="sm" variant="secondary" onClick={handleResetOnboarding}>
+            Replay onboarding
+          </GlowButton>
         </NeonCard>
       </div>
     </div>
   )
 }
+
+// Tiny section divider so the page reads like a real settings menu rather
+// than a stack of cards.
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  <div className="text-[10px] font-mono text-text-muted uppercase tracking-widest mt-2 -mb-2 px-1">
+    {children}
+  </div>
+)

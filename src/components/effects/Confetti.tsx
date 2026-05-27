@@ -31,18 +31,13 @@ export const Confetti = ({ active = true, label }: Props) => {
   if (!active) return null
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center select-none" aria-hidden="true">
-      {label && (
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.4 }}
-          className="mt-6 px-3 py-1 rounded-full bg-gold/15 border border-gold/40 text-gold text-[11px] font-mono uppercase tracking-widest"
-        >
-          {label}
-        </motion.div>
-      )}
-      <div className="relative w-0 h-0 mt-10">
+    <div
+      className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center select-none"
+      aria-hidden="true"
+    >
+      {/* The burst originates from the centre of the hero — particles fly
+          outward so they never sit on top of the COMPLETE headline. */}
+      <div className="relative w-0 h-0">
         {PARTICLES.map((p, i) => (
           <motion.div
             key={i}
@@ -59,6 +54,16 @@ export const Confetti = ({ active = true, label }: Props) => {
           </motion.div>
         ))}
       </div>
+      {label && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="absolute bottom-2 px-3 py-1 rounded-full bg-gold/15 border border-gold/40 text-gold text-[11px] font-mono uppercase tracking-widest"
+        >
+          {label}
+        </motion.div>
+      )}
     </div>
   )
 }
