@@ -12,6 +12,7 @@ import { MUSCLE_GROUPS } from '../data/muscleGroups'
 
 import { getRecommendations } from '../utils/recommendations'
 import { getLevelColor } from '../data/levelConfig'
+import { consumeNewlyUnlocked } from '../utils/achievements'
 import type { MuscleGroupId } from '../types'
 
 const container = {
@@ -65,6 +66,22 @@ export const WorkoutComplete = () => {
     }
     // newPrExerciseIds is memo'd; toast is stable from its provider
   }, [newPrExerciseIds.length, toast, newPrExerciseIds])
+
+  // Surface any achievements that crossed their threshold during this
+  // workout. consumeNewlyUnlocked silently seeds on first ever run so the
+  // user doesn't get spammed with toasts for already-unlocked entries.
+  useEffect(() => {
+    if (!lastCompletedWorkout) return
+    const fresh = consumeNewlyUnlocked(state)
+    fresh.forEach((a, i) => {
+      window.setTimeout(() => {
+        toast({ message: `Unlocked: ${a.title}`, variant: 'success', duration: 4000 })
+      }, 600 + i * 700)
+    })
+    // Intentionally one-shot per mount — re-evaluating on every state tick
+    // would risk double-firing if the user re-navigates between screens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (!lastCompletedWorkout) return null
 

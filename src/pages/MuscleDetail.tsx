@@ -7,6 +7,7 @@ import { LevelBadge } from '../components/progression/LevelBadge'
 import { NeonCard } from '../components/ui/NeonCard'
 import { GlowButton } from '../components/ui/GlowButton'
 import { EmptyState } from '../components/ui/EmptyState'
+import { Skeleton } from '../components/ui/Skeleton'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 
 import { getRecommendations } from '../utils/recommendations'
@@ -17,8 +18,27 @@ import type { MuscleGroupId } from '../types'
 export const MuscleDetail = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { state } = useAppStore()
+  const { state, ready } = useAppStore()
   const muscleId = id as MuscleGroupId
+
+  // Skeleton while IDB hydrates so the page doesn't flash "not found" before
+  // the muscleGroups map is populated.
+  if (!ready) {
+    return (
+      <div className="min-h-screen">
+        <div className="px-4 pt-4 pb-2 flex items-center gap-3">
+          <Skeleton className="w-7 h-7" rounded />
+          <Skeleton className="h-6 w-40" />
+        </div>
+        <div className="px-4 py-3 flex flex-col gap-3">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      </div>
+    )
+  }
 
   const meta = MUSCLE_GROUPS[muscleId]
   const muscleState = state.profile.muscleGroups[muscleId]

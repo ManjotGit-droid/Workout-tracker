@@ -131,10 +131,13 @@ export const SetRow = ({
               />
             </svg>
           </button>
+          {/* Visible glyph is still 20×32 (preserves the row grid) but the
+              ::before pseudo extends the actual hit target to ≥44×44 so we
+              meet the WCAG/HIG touch-target minimum without altering layout. */}
           <button
             onClick={onRemove}
             aria-label="Remove set"
-            className="w-5 h-8 flex items-center justify-center text-sl-muted hover:text-sl-danger opacity-40 hover:opacity-100 transition-opacity"
+            className="relative w-5 h-8 flex items-center justify-center text-sl-muted hover:text-sl-danger opacity-40 hover:opacity-100 transition-opacity before:content-[''] before:absolute before:-inset-x-3 before:-inset-y-2"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
               <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />

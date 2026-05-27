@@ -9,6 +9,7 @@ import { GlowButton } from '../components/ui/GlowButton'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AnimatedNumber } from '../components/ui/AnimatedNumber'
 import { Skeleton } from '../components/ui/Skeleton'
+import { LevelRing } from '../components/progression/LevelRing'
 import { RANK_COLORS, getLevelColor } from '../data/levelConfig'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { formatDate } from '../utils/formatters'
@@ -217,11 +218,20 @@ export const Dashboard = () => {
           </div>
           <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Sets</div>
         </NeonCard>
-        <NeonCard className="p-3 text-center" onClick={() => topMuscles[0] && navigate('/muscles/' + topMuscles[0].id)}>
-          <div className="text-2xl text-sl-gold hero-number">
-            <AnimatedNumber value={topLevel} />
-          </div>
-          <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Top Level</div>
+        <NeonCard className="p-3 flex flex-col items-center justify-center" onClick={() => topMuscles[0] && navigate('/muscles/' + topMuscles[0].id)}>
+          {topMuscles[0] ? (
+            <LevelRing
+              level={topMuscles[0].level}
+              pct={topMuscles[0].xp / topMuscles[0].xpToNextLevel}
+              color={getLevelColor(topMuscles[0].level).glow || 'var(--brand)'}
+              size={56}
+            />
+          ) : (
+            <div className="text-2xl text-sl-gold hero-number">
+              <AnimatedNumber value={topLevel} />
+            </div>
+          )}
+          <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-1">Top Level</div>
         </NeonCard>
       </div>
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useAppStore } from '../../store/AppContext'
 import { NeonCard } from '../ui/NeonCard'
+import { Skeleton } from '../ui/Skeleton'
 import { Heatmap } from './Heatmap'
 import { MUSCLE_GROUPS, MUSCLE_GROUP_IDS } from '../../data/muscleGroups'
 import { fromKg, formatDate } from '../../utils/formatters'
@@ -272,7 +273,7 @@ const computePerMuscleVolume = (
 // ── Component ────────────────────────────────────────────────────────────────
 
 export const ChartsTab = () => {
-  const { state } = useAppStore()
+  const { state, ready } = useAppStore()
   const { bodyLog, profile, weightUnit, customExercises } = state
   const completedWorkouts = profile.workoutHistory.filter((w) => w.completed)
 
@@ -312,6 +313,22 @@ export const ChartsTab = () => {
       .sort((a, b) => b.level - a.level)
       .slice(0, 8)
   }, [profile.muscleGroups])
+
+  // Skeleton during initial IDB hydration so the charts don't pop in
+  // empty-looking before bodyLog and workoutHistory arrive.
+  if (!ready) {
+    return (
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-4 w-44" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-4 w-44 mt-2" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-3">

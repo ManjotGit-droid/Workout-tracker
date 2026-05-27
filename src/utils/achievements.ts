@@ -196,3 +196,48 @@ export const evaluateAchievements = (state: AppState): EvaluatedAchievement[] =>
     const { unlocked, progress } = a.check(state)
     return { id: a.id, title: a.title, description: a.description, tier: a.tier, unlocked, progress }
   })
+
+const SEEN_LS_KEY = 'seenAchievements'
+
+const readSeen = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(SEEN_LS_KEY)
+    if (!raw) return new Set()
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return new Set()
+    return new Set(parsed.filter((x): x is string => typeof x === 'string'))
+  } catch {
+    return new Set()
+  }
+}
+
+const writeSeen = (ids: Set<string>) => {
+  try {
+    localStorage.setItem(SEEN_LS_KEY, JSON.stringify(Array.from(ids)))
+  } catch {
+    // localStorage full or unavailable — silent, this is non-critical
+  }
+}
+
+/**
+ * Returns the achievements that have unlocked since the last call. The first
+ * time this runs (no localStorage entry yet) it silently seeds every already-
+ * unlocked id so we don't spam toasts for old wins. Subsequent calls return
+ * only the *newly* unlocked entries and persist the updated seen-set.
+ */
+export const consumeNewlyUnlocked = (state: AppState): EvaluatedAchievement[] => {
+  const evaluated = evaluateAchievements(state)
+  const unlocked = evaluated.filter((a) => a.unlocked)
+  const firstRun = localStorage.getItem(SEEN_LS_KEY) === null
+  if (firstRun) {
+    writeSeen(new Set(unlocked.map((a) => a.id)))
+    return []
+  }
+  const seen = readSeen()
+  const fresh = unlocked.filter((a) => !seen.has(a.id))
+  if (fresh.length > 0) {
+    for (const a of fresh) seen.add(a.id)
+    writeSeen(seen)
+  }
+  return fresh
+}
