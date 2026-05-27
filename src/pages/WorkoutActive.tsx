@@ -107,74 +107,20 @@ export const WorkoutActive = () => {
     const backdatedDraft = startDate !== todayStr
     return (
       <div className="min-h-screen flex flex-col items-center px-6 text-center pt-12 pb-8">
-        <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Ready when you are</div>
-        <h1 className="text-2xl font-display font-bold text-sl-text mb-2">Start a workout</h1>
-        <p className="text-sm text-sl-muted font-mono mb-5 max-w-xs">
-          Nothing is being tracked yet. Tap below to begin a new session — the timer only starts after you press Start.
-        </p>
+        <h1 className="text-2xl font-display font-bold text-sl-text mb-5">Start a workout</h1>
 
         <div className="w-full max-w-xs mb-5">
-          <label className="text-[11px] font-mono text-sl-muted uppercase tracking-widest block mb-1 text-left">
-            Workout date
-          </label>
           <Calendar
             value={startDate}
             onChange={setStartDate}
             max={todayStr}
             highlightDates={new Set(state.profile.workoutHistory.map((w) => w.date))}
           />
-          {backdatedDraft && (
-            <p className="text-[11px] font-mono text-brand mt-2 text-left">
-              Logging a missed workout for {new Date(startDate).toLocaleDateString()} — no live timer.
-            </p>
-          )}
-          {!backdatedDraft && (
-            <p className="text-[11px] font-mono text-sl-muted mt-2 text-left">
-              Pick a past date if you forgot to log a previous workout.
-            </p>
-          )}
         </div>
 
         <GlowButton className="px-8 py-3" disabled={starting} onClick={handleStart}>
           {starting ? 'Starting…' : backdatedDraft ? 'Log workout' : 'Start workout'}
         </GlowButton>
-
-        {/* Templates panel (C6) */}
-        {state.workoutTemplates.length > 0 && (
-          <div className="w-full max-w-md mt-8">
-            <div className="text-[11px] font-mono text-sl-muted uppercase tracking-widest mb-2 text-left">
-              Saved templates
-            </div>
-            <div className="flex flex-col gap-2">
-              {state.workoutTemplates.map((t) => (
-                <NeonCard key={t.id} className="p-3 flex items-center gap-3">
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="text-sm font-display font-semibold truncate">{t.name}</div>
-                    <div className="text-[11px] font-mono text-sl-muted">
-                      {t.exerciseIds.length} exercises
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleStartFromTemplate(t)}
-                    disabled={starting}
-                    className="text-[11px] font-mono text-brand border border-brand/40 rounded-md px-2 py-1 hover:bg-brand/10 disabled:opacity-50"
-                  >
-                    Use
-                  </button>
-                  <button
-                    onClick={() => handleDeleteTemplate(t.id)}
-                    aria-label={`Delete template ${t.name}`}
-                    className="text-text-muted hover:text-danger w-7 h-7 flex items-center justify-center"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                </NeonCard>
-              ))}
-            </div>
-          </div>
-        )}
 
         <button
           className="mt-6 text-xs font-mono text-sl-muted hover:text-sl-text"
@@ -266,26 +212,6 @@ export const WorkoutActive = () => {
     toast({ message: `Saved template "${template.name}"`, variant: 'success' })
     setSavingTemplate(false)
     setTemplateName('')
-  }
-
-  const handleStartFromTemplate = async (t: WorkoutTemplate) => {
-    if (starting) return
-    setStarting(true)
-    try {
-      const opts = startDate !== todayStr ? { date: startDate } : undefined
-      await startWorkout(opts)
-      for (const exId of t.exerciseIds) {
-        await addExercise(exId)
-      }
-      setShowSearch(false)
-      toast({ message: `Loaded "${t.name}"`, variant: 'info' })
-    } finally {
-      setStarting(false)
-    }
-  }
-
-  const handleDeleteTemplate = (id: string) => {
-    dispatch({ type: 'DELETE_TEMPLATE', templateId: id })
   }
 
   const handleFinish = async () => {
