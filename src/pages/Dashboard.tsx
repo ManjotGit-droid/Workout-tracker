@@ -196,42 +196,70 @@ export const Dashboard = () => {
         </NeonCard>
       </div>
 
-      {/* Stats — bento layout: Workouts on top (hero), Sets + Top Level below */}
+      {/* Stats — bento layout: Workouts on top (hero), Sets + Top Level below.
+          Each card now carries its own bold tinted background so the three
+          sections read as distinct partitions, inspired by the lime / lavender
+          / pink card backgrounds in the MQoS Fitness UI reference shot. */}
       <div className="px-4 mb-4 grid grid-cols-2 gap-3">
-        <NeonCard className="col-span-2 p-4 flex items-center justify-between" glow="purple">
-          <div>
-            <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mb-1">Workouts</div>
-            <div className="text-3xl text-sl-purple hero-number">
+        <NeonCard
+          className="col-span-2 p-4 flex items-center justify-between relative overflow-hidden border-brand/30"
+          glow="purple"
+        >
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 -z-0"
+            style={{ background: 'linear-gradient(135deg, rgba(56,198,240,0.45), rgba(56,198,240,0.10) 80%)' }}
+          />
+          <div className="relative z-10">
+            <div className="text-xs font-mono text-text/80 uppercase tracking-wider mb-1">Workouts</div>
+            <div className="text-3xl text-white hero-number">
               <AnimatedNumber value={profile.totalWorkouts} />
             </div>
-            <div className="text-[11px] font-mono text-text-muted mt-0.5">
+            <div className="text-[11px] font-mono text-text/70 mt-0.5">
               {profile.workoutHistory.length > 0 ? `Last: ${formatDate(profile.workoutHistory[0].date)}` : 'No sessions yet'}
             </div>
           </div>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-10 h-10 text-sl-purple/60">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="relative z-10 w-10 h-10 text-white/80">
             <path d="M4 9v6M7 6v12M17 6v12M20 9v6M7 12h10" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </NeonCard>
-        <NeonCard className="p-3 text-center">
-          <div className="text-2xl text-sl-blue hero-number">
-            <AnimatedNumber value={profile.totalSets} />
-          </div>
-          <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Sets</div>
-        </NeonCard>
-        <NeonCard className="p-3 flex flex-col items-center justify-center" onClick={() => topMuscles[0] && navigate('/muscles/' + topMuscles[0].id)}>
-          {topMuscles[0] ? (
-            <LevelRing
-              level={topMuscles[0].level}
-              pct={topMuscles[0].xp / topMuscles[0].xpToNextLevel}
-              color={getLevelColor(topMuscles[0].level).glow || 'var(--brand)'}
-              size={56}
-            />
-          ) : (
-            <div className="text-2xl text-sl-gold hero-number">
-              <AnimatedNumber value={topLevel} />
+        <NeonCard className="p-3 text-center relative overflow-hidden border-indigo-400/30">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 -z-0"
+            style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.40), rgba(167,139,250,0.10) 85%)' }}
+          />
+          <div className="relative z-10">
+            <div className="text-2xl text-white hero-number">
+              <AnimatedNumber value={profile.totalSets} />
             </div>
-          )}
-          <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-1">Top Level</div>
+            <div className="text-xs font-mono text-text/80 uppercase tracking-wider mt-0.5">Sets</div>
+          </div>
+        </NeonCard>
+        <NeonCard
+          className="p-3 flex flex-col items-center justify-center relative overflow-hidden border-amber-400/30"
+          onClick={() => topMuscles[0] && navigate('/muscles/' + topMuscles[0].id)}
+        >
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 -z-0"
+            style={{ background: 'linear-gradient(135deg, rgba(251,191,36,0.40), rgba(251,191,36,0.10) 85%)' }}
+          />
+          <div className="relative z-10 flex flex-col items-center justify-center">
+            {topMuscles[0] ? (
+              <LevelRing
+                level={topMuscles[0].level}
+                pct={topMuscles[0].xp / topMuscles[0].xpToNextLevel}
+                color={getLevelColor(topMuscles[0].level).glow || 'var(--brand)'}
+                size={56}
+              />
+            ) : (
+              <div className="text-2xl text-white hero-number">
+                <AnimatedNumber value={topLevel} />
+              </div>
+            )}
+            <div className="text-xs font-mono text-text/80 uppercase tracking-wider mt-1">Top Level</div>
+          </div>
         </NeonCard>
       </div>
 

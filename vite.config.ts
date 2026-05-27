@@ -24,6 +24,15 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // Activate the new SW the moment it installs and take over open
+        // tabs immediately — fixes the white/black screen the user saw
+        // when a stale broken build kept being served between deploys.
+        skipWaiting: true,
+        clientsClaim: true,
+        // Drop any caches that aren't part of the current precache list so
+        // we don't keep serving outdated assets after a rapid follow-up
+        // build (e.g. the prior white-screen hotfix).
+        cleanupOutdatedCaches: true,
       },
     }),
   ],
