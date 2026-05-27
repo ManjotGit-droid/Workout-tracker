@@ -9,6 +9,7 @@ import { ExerciseLibrary } from './pages/ExerciseLibrary'
 import { Progress } from './pages/Progress'
 import { WorkoutPlans } from './pages/WorkoutPlans'
 import { Users } from './pages/Users'
+import { Settings } from './pages/Settings'
 import { ThemeProvider } from './store/ThemeContext'
 import { UserProvider } from './store/UserContext'
 import { ToastProvider } from './components/ui/Toast'
@@ -32,6 +33,7 @@ export const App = () => (
                   <Route path="plans" element={<WorkoutPlans />} />
                   <Route path="progress" element={<Progress />} />
                   <Route path="users" element={<Users />} />
+                  <Route path="settings" element={<Settings />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
               </Routes>

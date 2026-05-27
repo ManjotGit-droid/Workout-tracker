@@ -25,6 +25,7 @@ import { BodyTab } from '../components/body/BodyTab'
 import { ChartsTab } from '../components/charts/ChartsTab'
 import { WorkoutContextMenu } from '../components/workout/WorkoutContextMenu'
 import { useLongPress } from '../hooks/useLongPress'
+import { evaluateAchievements, TIER_STYLES } from '../utils/achievements'
 import type { WorkoutSession } from '../types'
 
 type Tab = 'muscles' | 'records' | 'body' | 'charts' | 'history' | 'data'
@@ -82,6 +83,9 @@ export const Progress = () => {
     .map((id) => state.profile.muscleGroups[id])
     .sort((a, b) => b.level - a.level)
 
+  const achievements = evaluateAchievements(state)
+  const unlockedCount = achievements.filter((a) => a.unlocked).length
+
   return (
     <div className="min-h-screen">
       <PageHeader
@@ -123,6 +127,64 @@ export const Progress = () => {
                 <div className="text-2xl font-mono font-bold text-sl-blue">{state.profile.totalSets}</div>
                 <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Total Sets</div>
               </NeonCard>
+            </div>
+
+            {/* Achievements (C9) */}
+            <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2 flex items-baseline justify-between">
+              <span>Achievements</span>
+              <span className="text-text/70 tabular-nums normal-case tracking-normal text-[11px]">{unlockedCount} / {achievements.length}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {achievements.map((a) => {
+                const style = TIER_STYLES[a.tier]
+                const pct = a.progress
+                  ? Math.min(100, (a.progress.current / a.progress.target) * 100)
+                  : a.unlocked ? 100 : 0
+                return (
+                  <div
+                    key={a.id}
+                    className="rounded-xl p-3 border relative overflow-hidden"
+                    style={{
+                      borderColor: a.unlocked ? style.border : 'var(--border)',
+                      background: 'var(--bg-elevated)',
+                      opacity: a.unlocked ? 1 : 0.65,
+                    }}
+                  >
+                    {a.unlocked && (
+                      <div
+                        aria-hidden="true"
+                        className="absolute -top-4 -right-4 w-12 h-12 rounded-full opacity-25"
+                        style={{ background: style.gradient }}
+                      />
+                    )}
+                    <div className="relative">
+                      <div
+                        className="text-xs font-mono uppercase tracking-widest mb-1"
+                        style={{ color: a.unlocked ? style.text : 'var(--text-muted)' }}
+                      >
+                        {a.unlocked ? 'Unlocked' : 'Locked'}
+                      </div>
+                      <div className="text-sm font-display font-bold text-text leading-tight">{a.title}</div>
+                      <div className="text-[10px] font-mono text-text-muted leading-snug mt-0.5">
+                        {a.description}
+                      </div>
+                      {a.progress && !a.unlocked && (
+                        <div className="mt-2">
+                          <div className="w-full h-1 bg-border/40 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${pct}%`, background: style.gradient }}
+                            />
+                          </div>
+                          <div className="text-[9px] font-mono text-text-muted/70 mt-0.5 tabular-nums">
+                            {a.progress.current} / {a.progress.target}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
 
             {/* All muscles with XP bars */}

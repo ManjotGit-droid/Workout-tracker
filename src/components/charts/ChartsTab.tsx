@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useAppStore } from '../../store/AppContext'
 import { NeonCard } from '../ui/NeonCard'
+import { Heatmap } from './Heatmap'
 import { MUSCLE_GROUPS, MUSCLE_GROUP_IDS } from '../../data/muscleGroups'
 import { fromKg, formatDate } from '../../utils/formatters'
 import { getLevelColor } from '../../data/levelConfig'
@@ -339,6 +340,12 @@ export const ChartsTab = () => {
       <NeonCard className="p-3">
         <div className="text-xs font-display font-semibold mb-1.5">Resting HR</div>
         <LineChart data={restingHrData} color="#ef4444" unit="bpm" height={55} />
+      </NeonCard>
+
+      {/* Activity heatmap (C8) */}
+      <NeonCard className="p-3">
+        <div className="text-sm font-display font-semibold mb-2">Activity</div>
+        <Heatmap workouts={completedWorkouts} weeks={12} />
       </NeonCard>
 
       {/* ── Workout trends section ───────────────────────────────── */}

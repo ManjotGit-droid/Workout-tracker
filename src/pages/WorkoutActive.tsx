@@ -12,6 +12,7 @@ import { estimate1RM } from '../utils/strength'
 import { ExerciseDemoModal } from '../components/exercise-vis/ExerciseDemoModal'
 import { RestTimer } from '../components/workout/RestTimer'
 import { useToast } from '../components/ui/Toast'
+import { Calendar } from '../components/ui/Calendar'
 import type { Exercise, MuscleGroupId, TrackingType, WorkoutTemplate, LoggedSet } from '../types'
 
 // uid for new template ids — small, dependency-free
@@ -122,20 +123,19 @@ export const WorkoutActive = () => {
           <label className="text-[11px] font-mono text-sl-muted uppercase tracking-widest block mb-1 text-left">
             Workout date
           </label>
-          <input
-            type="date"
+          <Calendar
             value={startDate}
+            onChange={setStartDate}
             max={todayStr}
-            onChange={(e) => setStartDate(e.target.value || todayStr)}
-            className="w-full bg-sunken border border-border rounded-xl px-3 py-2.5 text-[14px] text-text outline-none focus:border-brand tabular-nums"
+            highlightDates={new Set(state.profile.workoutHistory.map((w) => w.date))}
           />
           {backdatedDraft && (
-            <p className="text-[11px] font-mono text-brand mt-1.5 text-left">
+            <p className="text-[11px] font-mono text-brand mt-2 text-left">
               Logging a missed workout for {new Date(startDate).toLocaleDateString()} — no live timer.
             </p>
           )}
           {!backdatedDraft && (
-            <p className="text-[11px] font-mono text-sl-muted mt-1.5 text-left">
+            <p className="text-[11px] font-mono text-sl-muted mt-2 text-left">
               Pick a past date if you forgot to log a previous workout.
             </p>
           )}
