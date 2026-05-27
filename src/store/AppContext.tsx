@@ -149,9 +149,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const raw = localStorage.getItem(TEMPLATES_LS_KEY)
       if (!raw) return
-      const parsed = JSON.parse(raw) as WorkoutTemplate[]
-      if (Array.isArray(parsed)) {
-        dispatch({ type: 'LOAD_TEMPLATES', templates: parsed })
+      const parsed: unknown = JSON.parse(raw)
+      if (!Array.isArray(parsed)) return
+      // Validate each entry's shape so a tampered or partially-corrupt LS
+      // value can't surface as a render-time crash or render unexpected
+      // props through the UI. Strings are truncated and exerciseIds are
+      // string-coerced — every field is treated as untrusted input.
+      const sanitised: WorkoutTemplate[] = []
+      for (const t of parsed) {
+        if (!t || typeof t !== 'object') continue
+        const obj = t as Record<string, unknown>
+        if (typeof obj.id !== 'string' || typeof obj.name !== 'string') continue
+        if (!Array.isArray(obj.exerciseIds)) continue
+        const exerciseIds = obj.exerciseIds.filter((x): x is string => typeof x === 'string').slice(0, 200)
+        sanitised.push({
+          id: obj.id.slice(0, 64),
+          name: obj.name.slice(0, 120),
+          exerciseIds,
+          createdAt: typeof obj.createdAt === 'number' ? obj.createdAt : Date.now(),
+        })
+      }
+      if (sanitised.length > 0) {
+        dispatch({ type: 'LOAD_TEMPLATES', templates: sanitised })
       }
     } catch {
       // ignore — corrupt LS just resets the list

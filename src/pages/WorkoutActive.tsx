@@ -627,6 +627,7 @@ export const WorkoutActive = () => {
               <input
                 type="text"
                 autoFocus
+                maxLength={60}
                 placeholder="e.g. Push day, Leg day"
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
