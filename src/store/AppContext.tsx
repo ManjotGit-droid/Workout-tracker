@@ -12,6 +12,7 @@ import { fetchExercises } from '../api/exercises'
 import { fetchWorkouts, createWorkout, addExerciseToWorkout, removeExerciseFromWorkout, logSet, updateSet, deleteSet, completeWorkout, deleteWorkout, pauseWorkout as apiPauseWorkout, resumeWorkout as apiResumeWorkout } from '../api/workouts'
 import { fetchMuscleXp } from '../api/stats'
 import { fetchBodyEntries } from '../api/body'
+import { useToast } from '../components/ui/Toast'
 
 const createDefaultState = (): AppState => {
   const muscleGroups = Object.fromEntries(
@@ -83,6 +84,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [ready, setReady] = useState(false)
   // Track workout_exercise IDs: loggedExerciseId (frontend) → weId (DB / same value)
   const workoutIdRef = useRef<string | null>(null)
+  const { toast } = useToast()
+
+  // Single helper so every IDB-write catch reports the same way: warn in
+  // dev console *and* surface a user-visible toast so a silent failure
+  // (quota exceeded, IDB closed) doesn't pretend the change succeeded.
+  const reportWriteError = useCallback((err: unknown) => {
+    console.warn(err)
+    toast({ message: 'Failed to save — try again', variant: 'error' })
+  }, [toast])
 
   // ── Load initial state from API ──────────────────────────────────────────
   useEffect(() => {
@@ -207,8 +217,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const wid = workoutIdRef.current
     if (!wid) return
     dispatch({ type: 'REMOVE_EXERCISE', loggedExerciseId })
-    await removeExerciseFromWorkout(wid, loggedExerciseId).catch(console.warn)
-  }, [])
+    await removeExerciseFromWorkout(wid, loggedExerciseId).catch(reportWriteError)
+  }, [reportWriteError])
 
   const logNewSet = useCallback(async (loggedExerciseId: string, data: {
     reps?: number; weight?: number; duration?: number; distance?: number; notes?: string; rpe?: number
@@ -237,15 +247,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     reps?: number; weight?: number; duration?: number; distance?: number; completed?: boolean; notes?: string; rpe?: number
   }) => {
     const wid = workoutIdRef.current
-    if (wid) updateSet(wid, loggedExerciseId, setId, patch).catch(console.warn)
+    if (wid) updateSet(wid, loggedExerciseId, setId, patch).catch(reportWriteError)
     dispatch({ type: 'UPDATE_SET', loggedExerciseId, setId, patch })
-  }, [])
+  }, [reportWriteError])
 
   const removeSet = useCallback(async (loggedExerciseId: string, setId: string) => {
     const wid = workoutIdRef.current
-    if (wid) deleteSet(wid, loggedExerciseId, setId).catch(console.warn)
+    if (wid) deleteSet(wid, loggedExerciseId, setId).catch(reportWriteError)
     dispatch({ type: 'REMOVE_SET', loggedExerciseId, setId })
-  }, [])
+  }, [reportWriteError])
 
   const finishWorkout = useCallback(async () => {
     const wid = workoutIdRef.current
@@ -276,9 +286,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     workoutIdRef.current = null
     dispatch({ type: 'DISCARD_WORKOUT' })
     if (wid) {
-      await deleteWorkout(wid).catch(console.warn)
+      await deleteWorkout(wid).catch(reportWriteError)
     }
-  }, [])
+  }, [reportWriteError])
 
   const startWorkoutFromPlan = useCallback(async (
     planExercises: Array<{
@@ -301,7 +311,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const oldId = workoutIdRef.current
       workoutIdRef.current = null
       dispatch({ type: 'DISCARD_WORKOUT' })
-      await deleteWorkout(oldId).catch(console.warn)
+      await deleteWorkout(oldId).catch(reportWriteError)
     }
 
     const workout = await createWorkout()
@@ -343,7 +353,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         tick()
       }
     }
-  }, [])
+  }, [reportWriteError])
 
   const value: ContextValue = {
     state, dispatch, ready,

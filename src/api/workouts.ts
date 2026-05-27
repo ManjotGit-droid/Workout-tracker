@@ -254,6 +254,9 @@ export const updateSet = async (
             distance: patch.distance ?? s.distance,
             completed: patch.completed ?? s.completed,
             notes: patch.notes ?? s.notes,
+            // `!== undefined` (not `??`) so the user can explicitly clear
+            // RPE back to null via the "Clear RPE" button.
+            rpe: patch.rpe !== undefined ? patch.rpe : s.rpe,
           }
           return updatedSet
         }),
@@ -308,11 +311,23 @@ export const completeWorkout = async (
     tx.objectStore('muscle_xp').put(applyXpToRecord(existing, xpGain))
   }
 
-  // For back-dated workouts, end_time is set to start_time + 1 h so the
-  // displayed duration doesn't reflect calendar time between the workout date
-  // and "now". For today's workouts, end_time is just now.
+  // For back-dated workouts the calendar clock between the workout date and
+  // "now" is meaningless, so we derive an estimated duration from the actual
+  // session shape: ~2.5 min per completed set + ~1 min per exercise (warmup,
+  // setup, switching). Clamped to [20, 180] min so a 1-set entry doesn't
+  // report a 2-minute workout and a 50-set marathon doesn't report 4 hours.
+  // For today's workouts, end_time is just now.
   const isBackdated = w.date !== todayDate()
-  const endTime = isBackdated ? w.start_time + 60 * 60 * 1000 : Date.now()
+  let endTime: number
+  if (isBackdated) {
+    let completedSets = 0
+    const exerciseCount = w.exercises.length
+    for (const we of w.exercises) for (const s of we.sets) if (s.completed) completedSets++
+    const estMin = Math.max(20, Math.min(180, completedSets * 2.5 + exerciseCount * 1))
+    endTime = w.start_time + Math.round(estMin * 60 * 1000)
+  } else {
+    endTime = Date.now()
+  }
   const completedWorkout: WorkoutRecord = {
     ...w,
     completed: true,

@@ -191,7 +191,10 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
         ...state,
         profile: {
           ...newProfile,
-          workoutHistory: [completedWorkout, ...newProfile.workoutHistory].slice(0, 200),
+          // No in-memory cap. IDB holds the canonical store; the chart
+          // helpers all bound their own windows (last N weeks, etc.) so
+          // a large history never goes into a heavy render path.
+          workoutHistory: [completedWorkout, ...newProfile.workoutHistory],
         },
         activeWorkout: null,
         lastCompletedWorkout: completedWorkout,

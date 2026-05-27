@@ -325,11 +325,11 @@ export const WorkoutActive = () => {
           <div className="flex gap-2">
             {!isBackdated && (
               isPaused ? (
-                <GlowButton size="sm" onClick={() => resumeWorkout().catch(console.error)}>
+                <GlowButton size="sm" onClick={() => resumeWorkout().catch(() => toast({ message: 'Could not resume — try again', variant: 'error' }))}>
                   Resume
                 </GlowButton>
               ) : (
-                <GlowButton variant="secondary" size="sm" onClick={() => pauseWorkout().catch(console.error)}>
+                <GlowButton variant="secondary" size="sm" onClick={() => pauseWorkout().catch(() => toast({ message: 'Could not pause — try again', variant: 'error' }))}>
                   Pause
                 </GlowButton>
               )
@@ -366,7 +366,7 @@ export const WorkoutActive = () => {
           </div>
           <button
             className="text-xs font-mono text-sl-muted hover:text-sl-purple px-2 py-1 rounded border border-sl-border hover:border-sl-purple/40 transition-colors"
-            onClick={() => resumeWorkout().catch(console.error)}
+            onClick={() => resumeWorkout().catch(() => toast({ message: 'Could not resume — try again', variant: 'error' }))}
           >
             Resume
           </button>

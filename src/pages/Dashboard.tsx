@@ -9,7 +9,7 @@ import { GlowButton } from '../components/ui/GlowButton'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AnimatedNumber } from '../components/ui/AnimatedNumber'
 import { Skeleton } from '../components/ui/Skeleton'
-import { RANK_COLORS } from '../data/levelConfig'
+import { RANK_COLORS, getLevelColor } from '../data/levelConfig'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { formatDate } from '../utils/formatters'
 import { computeStreak, isStreakAtRisk } from '../utils/streak'
@@ -252,6 +252,7 @@ export const Dashboard = () => {
           {topMuscles.map((muscle) => {
             const meta = MUSCLE_GROUPS[muscle.id]
             const pct = Math.min(100, (muscle.xp / muscle.xpToNextLevel) * 100)
+            const { fill, glow } = getLevelColor(muscle.level)
             return (
               <motion.div key={muscle.id} variants={listItem}>
               <NeonCard
@@ -261,8 +262,8 @@ export const Dashboard = () => {
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-mono font-bold text-white flex-shrink-0"
                   style={{
-                    background: `radial-gradient(circle, ${getLevelFill(muscle.level)}, #0f0f1a)`,
-                    boxShadow: muscle.level > 4 ? `0 0 8px ${getLevelGlow(muscle.level)}` : 'none',
+                    background: `radial-gradient(circle, ${fill}, #0f0f1a)`,
+                    boxShadow: muscle.level > 4 ? `0 0 8px ${glow}` : 'none',
                   }}
                 >
                   {muscle.level}
@@ -272,7 +273,7 @@ export const Dashboard = () => {
                   <div className="w-full h-1.5 bg-sl-border rounded-full mt-1 overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%`, backgroundColor: getLevelGlow(muscle.level) || '#4a1a7a' }}
+                      style={{ width: `${pct}%`, backgroundColor: glow || '#4a1a7a' }}
                     />
                   </div>
                 </div>
@@ -391,15 +392,18 @@ const RecentWorkoutCard = ({ workout, customExercises, muscleGroups, variants, o
             </div>
           </div>
           <div className="flex gap-1 flex-wrap justify-end max-w-[120px]">
-            {workedMuscles.slice(0, 4).map((mId) => (
-              <span
-                key={mId}
-                className="text-xs px-1.5 py-0.5 rounded font-mono"
-                style={{ backgroundColor: `${getLevelFill(muscleGroups[mId]?.level ?? 1)}80`, color: getLevelGlow(muscleGroups[mId]?.level ?? 1) || '#9333ea' }}
-              >
-                {MUSCLE_GROUPS[mId]?.shortName}
-              </span>
-            ))}
+            {workedMuscles.slice(0, 4).map((mId) => {
+              const { fill, glow } = getLevelColor(muscleGroups[mId]?.level ?? 1)
+              return (
+                <span
+                  key={mId}
+                  className="text-xs px-1.5 py-0.5 rounded font-mono"
+                  style={{ backgroundColor: `${fill}80`, color: glow || '#9333ea' }}
+                >
+                  {MUSCLE_GROUPS[mId]?.shortName}
+                </span>
+              )
+            })}
           </div>
         </div>
       </NeonCard>
@@ -407,26 +411,3 @@ const RecentWorkoutCard = ({ workout, customExercises, muscleGroups, variants, o
   )
 }
 
-const getLevelFill = (level: number): string => {
-  if (level < 3)  return '#2d1a3d'
-  if (level < 5)  return '#4a1a7a'
-  if (level < 10) return '#6b21a8'
-  if (level < 15) return '#7c3aed'
-  if (level < 20) return '#4f46e5'
-  if (level < 30) return '#3b82f6'
-  if (level < 50) return '#0ea5e9'
-  if (level < 75) return '#eab308'
-  return '#f59e0b'
-}
-
-const getLevelGlow = (level: number): string => {
-  if (level < 3)  return '#4a1060'
-  if (level < 5)  return '#6a2090'
-  if (level < 10) return '#9333ea'
-  if (level < 15) return '#a855f7'
-  if (level < 20) return '#818cf8'
-  if (level < 30) return '#60a5fa'
-  if (level < 50) return '#38bdf8'
-  if (level < 75) return '#facc15'
-  return '#fde68a'
-}
