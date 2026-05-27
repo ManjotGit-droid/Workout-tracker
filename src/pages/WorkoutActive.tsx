@@ -198,6 +198,24 @@ export const WorkoutActive = () => {
       e.muscles.some((m) => MUSCLE_GROUPS[m.muscleId as MuscleGroupId]?.name?.toLowerCase().includes(search.toLowerCase())),
   )
 
+  // Recently-used exercise chips (B9) — last 6 distinct exercise IDs across
+  // recent completed workouts, minus the ones already in the active session.
+  const recentlyUsedExercises = (() => {
+    const inSession = new Set(activeWorkout?.exercises.map((e) => e.exerciseId) ?? [])
+    const seen = new Set<string>()
+    const out: Exercise[] = []
+    for (const w of state.profile.workoutHistory) {
+      for (const we of w.exercises) {
+        if (seen.has(we.exerciseId) || inSession.has(we.exerciseId)) continue
+        seen.add(we.exerciseId)
+        const ex = allExercises.find((x) => x.id === we.exerciseId)
+        if (ex) out.push(ex)
+        if (out.length >= 6) return out
+      }
+    }
+    return out
+  })()
+
   const handleAddExercise = async (exerciseId: string) => {
     await addExercise(exerciseId)
     setSearch('')
@@ -448,6 +466,25 @@ export const WorkoutActive = () => {
         {/* Add exercise search */}
         {showSearch ? (
           <NeonCard className="overflow-hidden">
+            {recentlyUsedExercises.length > 0 && search.length === 0 && (
+              <div className="px-3 pt-3 border-b border-sl-border/50">
+                <div className="text-[10px] font-mono text-sl-muted uppercase tracking-widest mb-1.5">
+                  Recently used
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                  {recentlyUsedExercises.map((ex) => (
+                    <button
+                      key={ex.id}
+                      onClick={() => handleAddExercise(ex.id)}
+                      className="flex-shrink-0 text-[11px] font-mono px-2.5 py-1 rounded-full border border-brand/40 text-brand bg-brand/10 hover:bg-brand/15 transition-colors max-w-[160px] truncate"
+                      title={ex.name}
+                    >
+                      {ex.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="p-3 border-b border-sl-border">
               <input
                 ref={searchRef}

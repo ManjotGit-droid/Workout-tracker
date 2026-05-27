@@ -26,6 +26,7 @@ export type AppAction =
   // ── Workout completion ─────────────────────────────────────────────────────
   | { type: 'FINISH_WORKOUT_WITH_XP'; muscleXp: Partial<Record<MuscleGroupId, number>> }
   | { type: 'DISCARD_WORKOUT' }
+  | { type: 'DELETE_WORKOUT_FROM_HISTORY'; workoutId: string }
 
   // ── Pause / resume ─────────────────────────────────────────────────────────
   | { type: 'PAUSE_WORKOUT'; pausedAt: number }

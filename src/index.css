@@ -319,6 +319,16 @@ textarea:focus-visible {
   animation: skeletonPulse 1.4s ease-in-out infinite;
 }
 
+/* Rank-badge "breathe" — pulses brightness only, so it stacks cleanly
+   on top of the inline `box-shadow` driving the tier glow. */
+@keyframes rankBreathe {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50%      { filter: brightness(1.15) saturate(1.15); }
+}
+.rank-breathe {
+  animation: rankBreathe 2.4s ease-in-out infinite;
+}
+
 /* Hero number — used on Dashboard stats and XPBar level for the
    Apple-Fitness big-number feel. Tighter kerning + heavier weight. */
 .hero-number {

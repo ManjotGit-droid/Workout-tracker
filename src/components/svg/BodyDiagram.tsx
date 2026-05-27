@@ -9,6 +9,8 @@ interface Props {
   interactive?: boolean
   onMuscleClick?: (id: MuscleGroupId) => void
   className?: string
+  /** Optional fill override per muscle — used for the recency-tint mode (A6). */
+  fillOverride?: Partial<Record<MuscleGroupId, string>>
 }
 
 /**
@@ -53,8 +55,20 @@ export const BodyDiagram = ({
   interactive = false,
   onMuscleClick,
   className,
+  fillOverride,
 }: Props) => {
-  const colors = useMuscleColors()
+  const baseColors = useMuscleColors()
+
+  // Apply per-muscle fill overrides (recency-tint mode). The glow colour is
+  // left alone so the activated-muscle highlight still works as before.
+  const colors = fillOverride
+    ? (Object.fromEntries(
+        (Object.keys(baseColors) as MuscleGroupId[]).map((id) => [
+          id,
+          { ...baseColors[id], fill: fillOverride[id] ?? baseColors[id].fill },
+        ]),
+      ) as typeof baseColors)
+    : baseColors
 
   const activatedSvgIds = new Set<string>()
   for (const muscleId of activatedMuscleIds) {

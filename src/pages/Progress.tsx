@@ -13,6 +13,7 @@ import { exportData, importData, resetData } from '../api/data'
 import { PageHeader } from '../components/layout/PageHeader'
 import { NeonCard } from '../components/ui/NeonCard'
 import { GlowButton } from '../components/ui/GlowButton'
+import { EmptyState } from '../components/ui/EmptyState'
 import { LevelBadge } from '../components/progression/LevelBadge'
 import { XPBar } from '../components/progression/XPBar'
 import { MUSCLE_GROUPS, MUSCLE_GROUP_IDS } from '../data/muscleGroups'
@@ -22,8 +23,11 @@ import { fromKg, formatDate } from '../utils/formatters'
 import { RankBadge } from '../components/progression/RankBadge'
 import { BodyTab } from '../components/body/BodyTab'
 import { ChartsTab } from '../components/charts/ChartsTab'
+import { WorkoutContextMenu } from '../components/workout/WorkoutContextMenu'
+import { useLongPress } from '../hooks/useLongPress'
+import type { WorkoutSession } from '../types'
 
-type Tab = 'muscles' | 'records' | 'body' | 'charts' | 'data'
+type Tab = 'muscles' | 'records' | 'body' | 'charts' | 'history' | 'data'
 
 export const Progress = () => {
   const { state } = useAppStore()
@@ -35,6 +39,7 @@ export const Progress = () => {
   const [autoBackup, setAutoBackup] = useState<boolean>(() => isAutoBackupEnabled())
   const [lastBackupAt, setLastBackupAt] = useState<number | null>(() => getLastBackupAt())
   const [backupRunning, setBackupRunning] = useState(false)
+  const [contextWorkout, setContextWorkout] = useState<WorkoutSession | null>(null)
 
   const handleToggleAutoBackup = () => {
     const next = !autoBackup
@@ -87,7 +92,7 @@ export const Progress = () => {
 
       {/* Tabs */}
       <div className="flex border-b border-sl-border overflow-x-auto hide-scrollbar">
-        {(['muscles', 'records', 'body', 'charts', 'data'] as Tab[]).map((t) => (
+        {(['muscles', 'records', 'history', 'body', 'charts', 'data'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -101,6 +106,8 @@ export const Progress = () => {
           </button>
         ))}
       </div>
+
+      <WorkoutContextMenu workout={contextWorkout} onClose={() => setContextWorkout(null)} />
 
       <div className="px-4 py-3">
         {/* ── MUSCLES TAB ── */}
@@ -196,6 +203,37 @@ export const Progress = () => {
                     )
                   })}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ── HISTORY TAB ── */}
+        {tab === 'history' && (
+          <div>
+            {state.profile.workoutHistory.length === 0 ? (
+              <NeonCard className="p-1">
+                <EmptyState
+                  glyph="history"
+                  title="No workouts yet"
+                  subtitle="Once you finish a session it'll appear here. Long-press a row to duplicate or delete it."
+                />
+              </NeonCard>
+            ) : (
+              <>
+                <div className="text-[11px] font-mono text-text-muted/70 mb-2">
+                  Long-press a workout to duplicate or delete it.
+                </div>
+                <div className="flex flex-col gap-2">
+                  {state.profile.workoutHistory.map((w) => (
+                    <HistoryRow
+                      key={w.id}
+                      workout={w}
+                      customExercises={state.customExercises}
+                      onLongPress={() => setContextWorkout(w)}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}
@@ -315,5 +353,45 @@ export const Progress = () => {
         )}
       </div>
     </div>
+  )
+}
+
+// Module-scope row so long-press handlers stay bound to stable references.
+type CustomExercises = import('../types').AppState['customExercises']
+
+interface HistoryRowProps {
+  workout: WorkoutSession
+  customExercises: CustomExercises
+  onLongPress: () => void
+}
+
+const HistoryRow = ({ workout, customExercises, onLongPress }: HistoryRowProps) => {
+  const press = useLongPress(onLongPress, undefined, { threshold: 520 })
+  const setCount = workout.exercises.reduce((sum, e) => sum + e.sets.filter((s) => s.completed).length, 0)
+  const exerciseNames = workout.exercises
+    .map((e) => customExercises.find((x) => x.id === e.exerciseId)?.name ?? e.exerciseId)
+    .slice(0, 3)
+  const durationMin = workout.endTime
+    ? Math.max(0, Math.floor((workout.endTime - workout.startTime) / 60000))
+    : null
+
+  return (
+    <NeonCard className="p-3">
+      <div className="flex items-start justify-between gap-3" {...press} style={{ touchAction: 'pan-y' }}>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-mono text-text-muted">
+            {formatDate(workout.date)}{durationMin !== null && ` · ${durationMin} min`}
+          </div>
+          <div className="text-sm font-display mt-0.5 truncate">
+            {exerciseNames.join(' · ')}
+            {workout.exercises.length > 3 && ` +${workout.exercises.length - 3}`}
+          </div>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <div className="text-sm font-mono font-bold text-brand tabular-nums">{setCount}</div>
+          <div className="text-[10px] font-mono text-text-muted uppercase tracking-wider">sets</div>
+        </div>
+      </div>
+    </NeonCard>
   )
 }

@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAppStore } from '../store/AppContext'
@@ -12,7 +13,10 @@ import { RANK_COLORS } from '../data/levelConfig'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 import { formatDate } from '../utils/formatters'
 import { computeStreak, isStreakAtRisk } from '../utils/streak'
-import type { MuscleGroupId } from '../types'
+import { computeMuscleRecency, recencyFill } from '../utils/muscleRecency'
+import { useLongPress } from '../hooks/useLongPress'
+import { WorkoutContextMenu } from '../components/workout/WorkoutContextMenu'
+import type { MuscleGroupId, WorkoutSession } from '../types'
 
 // Stagger variants reused for the top-muscles and recent-sessions lists.
 const listContainer = {
@@ -45,7 +49,7 @@ const timeOfDayTint = (hour: number): string => {
 export const Dashboard = () => {
   const { state, ready } = useAppStore()
   const navigate = useNavigate()
-  const { profile, activeWorkout } = state
+  const { profile, activeWorkout, customExercises } = state
 
   const recentWorkouts = profile.workoutHistory.slice(0, 3)
   const rankColors = RANK_COLORS[profile.rank]
@@ -61,6 +65,24 @@ export const Dashboard = () => {
 
   const hour = new Date().getHours()
   const greeting = greetingFor(hour)
+
+  // Long-press context menu on Recent Sessions (B10)
+  const [contextWorkout, setContextWorkout] = useState<WorkoutSession | null>(null)
+
+  // Body-diagram color mode (A6) — toggle between level-based default and a
+  // recency-tint that surfaces "what's getting neglected" at a glance.
+  const [diagramMode, setDiagramMode] = useState<'level' | 'recency'>('level')
+  const recencyMap = useMemo(
+    () => computeMuscleRecency(profile.workoutHistory, customExercises),
+    [profile.workoutHistory, customExercises],
+  )
+  const recencyFillMap = useMemo(() => {
+    const out: Partial<Record<MuscleGroupId, string>> = {}
+    for (const k of Object.keys(recencyMap) as MuscleGroupId[]) {
+      out[k] = recencyFill(recencyMap[k])
+    }
+    return out
+  }, [recencyMap])
 
   // ── Skeleton state during initial IDB hydration ──────────────────────────
   if (!ready) {
@@ -162,13 +184,30 @@ export const Dashboard = () => {
       {/* Body Diagram */}
       <div className="px-4 mb-4">
         <NeonCard className="p-3" glow="purple">
-          <div className="text-xs font-mono text-sl-muted text-center mb-2 uppercase tracking-widest">
-            Tap a muscle to see details
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="text-xs font-mono text-sl-muted uppercase tracking-widest flex-1">
+              {diagramMode === 'level' ? 'Tap a muscle to see details' : 'Warm = recent · Cool = neglected'}
+            </div>
+            <div className="flex border border-border rounded-full text-[10px] font-mono overflow-hidden">
+              {(['level', 'recency'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setDiagramMode(m)}
+                  className={`px-2.5 py-0.5 transition-colors ${
+                    diagramMode === m ? 'bg-brand text-white' : 'text-text-muted hover:text-text'
+                  }`}
+                  aria-pressed={diagramMode === m}
+                >
+                  {m === 'level' ? 'Level' : 'Recency'}
+                </button>
+              ))}
+            </div>
           </div>
           <BodyDiagram
             interactive
             onMuscleClick={(id) => navigate(`/muscles/${id}`)}
             className="max-h-96"
+            fillOverride={diagramMode === 'recency' ? recencyFillMap : undefined}
           />
         </NeonCard>
       </div>
@@ -264,6 +303,9 @@ export const Dashboard = () => {
         </motion.div>
       </div>
 
+      {/* Long-press context menu (B10) */}
+      <WorkoutContextMenu workout={contextWorkout} onClose={() => setContextWorkout(null)} />
+
       {/* Recent workouts */}
       <div className="px-4 mb-6">
         <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Recent Sessions</div>
@@ -289,46 +331,72 @@ export const Dashboard = () => {
             initial="hidden"
             animate="show"
           >
-            {recentWorkouts.map((w) => {
-              const workedMuscles = Object.keys(w.xpGained) as MuscleGroupId[]
-              const exerciseNames = w.exercises
-                .map((e) => {
-                  const ex = state.customExercises.find((x) => x.id === e.exerciseId)
-                  return ex?.name ?? e.exerciseId
-                })
-                .slice(0, 3)
-
-              return (
-                <motion.div key={w.id} variants={listItem}>
-                <NeonCard className="p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-mono text-sl-muted">{formatDate(w.date)}</div>
-                      <div className="text-sm font-display mt-0.5 truncate">
-                        {exerciseNames.join(' · ')}
-                        {w.exercises.length > 3 && ` +${w.exercises.length - 3}`}
-                      </div>
-                    </div>
-                    <div className="flex gap-1 flex-wrap justify-end max-w-[120px]">
-                      {workedMuscles.slice(0, 4).map((mId) => (
-                        <span
-                          key={mId}
-                          className="text-xs px-1.5 py-0.5 rounded font-mono"
-                          style={{ backgroundColor: `${getLevelFill(profile.muscleGroups[mId]?.level ?? 1)}80`, color: getLevelGlow(profile.muscleGroups[mId]?.level ?? 1) || '#9333ea' }}
-                        >
-                          {MUSCLE_GROUPS[mId]?.shortName}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </NeonCard>
-                </motion.div>
-              )
-            })}
+            {recentWorkouts.map((w) => (
+              <RecentWorkoutCard
+                key={w.id}
+                workout={w}
+                customExercises={state.customExercises}
+                muscleGroups={profile.muscleGroups}
+                variants={listItem}
+                onLongPress={() => setContextWorkout(w)}
+              />
+            ))}
           </motion.div>
         )}
       </div>
     </div>
+  )
+}
+
+// Module-scope card so the inputs / refs stay stable across re-renders and
+// long-press handlers don't end up bound to a freshly-recreated closure on
+// every tick.
+type CustomExercises = import('../types').AppState['customExercises']
+type MuscleGroups = import('../types').UserProfile['muscleGroups']
+
+interface RecentCardProps {
+  workout: WorkoutSession
+  customExercises: CustomExercises
+  muscleGroups: MuscleGroups
+  variants: typeof listItem
+  onLongPress: () => void
+}
+
+const RecentWorkoutCard = ({ workout, customExercises, muscleGroups, variants, onLongPress }: RecentCardProps) => {
+  const press = useLongPress(onLongPress, undefined, { threshold: 520 })
+  const workedMuscles = Object.keys(workout.xpGained) as MuscleGroupId[]
+  const exerciseNames = workout.exercises
+    .map((e) => {
+      const ex = customExercises.find((x) => x.id === e.exerciseId)
+      return ex?.name ?? e.exerciseId
+    })
+    .slice(0, 3)
+
+  return (
+    <motion.div variants={variants}>
+      <NeonCard className="p-3" >
+        <div className="flex items-start justify-between gap-2" {...press}>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-mono text-sl-muted">{formatDate(workout.date)}</div>
+            <div className="text-sm font-display mt-0.5 truncate">
+              {exerciseNames.join(' · ')}
+              {workout.exercises.length > 3 && ` +${workout.exercises.length - 3}`}
+            </div>
+          </div>
+          <div className="flex gap-1 flex-wrap justify-end max-w-[120px]">
+            {workedMuscles.slice(0, 4).map((mId) => (
+              <span
+                key={mId}
+                className="text-xs px-1.5 py-0.5 rounded font-mono"
+                style={{ backgroundColor: `${getLevelFill(muscleGroups[mId]?.level ?? 1)}80`, color: getLevelGlow(muscleGroups[mId]?.level ?? 1) || '#9333ea' }}
+              >
+                {MUSCLE_GROUPS[mId]?.shortName}
+              </span>
+            ))}
+          </div>
+        </div>
+      </NeonCard>
+    </motion.div>
   )
 }
 

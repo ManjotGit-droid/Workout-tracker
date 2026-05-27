@@ -203,6 +203,21 @@ export const appReducer = (state: AppState, action: AppAction): AppState => {
     case 'DISCARD_WORKOUT':
       return { ...state, activeWorkout: null }
 
+    case 'DELETE_WORKOUT_FROM_HISTORY': {
+      const target = state.profile.workoutHistory.find((w) => w.id === action.workoutId)
+      if (!target) return state
+      const removedSets = target.exercises.reduce((sum, e) => sum + e.sets.filter((s) => s.completed).length, 0)
+      return {
+        ...state,
+        profile: {
+          ...state.profile,
+          workoutHistory: state.profile.workoutHistory.filter((w) => w.id !== action.workoutId),
+          totalWorkouts: Math.max(0, state.profile.totalWorkouts - 1),
+          totalSets: Math.max(0, state.profile.totalSets - removedSets),
+        },
+      }
+    }
+
     case 'PAUSE_WORKOUT': {
       if (!state.activeWorkout) return state
       return {

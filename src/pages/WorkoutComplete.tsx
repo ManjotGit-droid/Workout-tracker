@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAppStore, useDispatch } from '../store/AppContext'
@@ -6,6 +6,8 @@ import { BodyDiagram } from '../components/svg/BodyDiagram'
 import { XPBar } from '../components/progression/XPBar'
 import { GlowButton } from '../components/ui/GlowButton'
 import { NeonCard } from '../components/ui/NeonCard'
+import { Confetti } from '../components/effects/Confetti'
+import { useToast } from '../components/ui/Toast'
 import { MUSCLE_GROUPS } from '../data/muscleGroups'
 
 import { getRecommendations } from '../utils/recommendations'
@@ -25,11 +27,44 @@ export const WorkoutComplete = () => {
   const { state } = useAppStore()
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { lastCompletedWorkout, profile, customExercises } = state
+  const { toast } = useToast()
+  const { lastCompletedWorkout, profile, customExercises, personalRecords } = state
 
   useEffect(() => {
     if (!lastCompletedWorkout) navigate('/', { replace: true })
   }, [lastCompletedWorkout, navigate])
+
+  // Detect new PRs set in this workout. The reducer only updates a PR when
+  // the new weight is strictly greater, so `pr.date === workout.date` for an
+  // exercise the user just lifted means "fresh PR".
+  const newPrExerciseIds = useMemo(() => {
+    if (!lastCompletedWorkout) return [] as string[]
+    const out: string[] = []
+    for (const we of lastCompletedWorkout.exercises) {
+      const pr = personalRecords[we.exerciseId]
+      if (pr && pr.date === lastCompletedWorkout.date) {
+        // Verify a completed set in *this* workout matches the PR — guards
+        // against the case where the PR was set in an earlier workout today.
+        const hit = we.sets.some((s) => s.completed && (s.weight ?? 0) === pr.weightKg)
+        if (hit) out.push(we.exerciseId)
+      }
+    }
+    return out
+  }, [lastCompletedWorkout, personalRecords])
+
+  // One-shot PR toast on mount when at least one fresh PR landed.
+  useEffect(() => {
+    if (newPrExerciseIds.length > 0) {
+      toast({
+        message: newPrExerciseIds.length === 1
+          ? 'New personal record!'
+          : `${newPrExerciseIds.length} new personal records!`,
+        variant: 'success',
+        duration: 3500,
+      })
+    }
+    // newPrExerciseIds is memo'd; toast is stable from its provider
+  }, [newPrExerciseIds.length, toast, newPrExerciseIds])
 
   if (!lastCompletedWorkout) return null
 
@@ -63,6 +98,9 @@ export const WorkoutComplete = () => {
     <div className="min-h-screen pb-8">
       {/* Hero */}
       <div className="relative overflow-hidden bg-gradient-to-b from-sl-purple/20 to-sl-bg pt-8 pb-4 px-4 text-center">
+        {newPrExerciseIds.length > 0 && (
+          <Confetti label={newPrExerciseIds.length === 1 ? 'New PR' : `${newPrExerciseIds.length} new PRs`} />
+        )}
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
