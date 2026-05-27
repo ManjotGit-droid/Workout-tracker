@@ -7,10 +7,12 @@ interface Props {
   label?: string
 }
 
+type ParticleKind = 'tri' | 'square' | 'circle'
+
 // Hand-drawn particle palette. Six pieces is enough to read as "confetti"
 // without becoming distracting. Each particle is laid out around the origin
 // and animated outward with framer-motion.
-const PARTICLES: Array<{ x: number; y: number; angle: number; color: string; kind: 'tri' | 'square' | 'circle' }> = [
+const PARTICLES: Array<{ x: number; y: number; angle: number; color: string; kind: ParticleKind }> = [
   { x:  60, y: -10, angle:   15, color: '#fbbf24', kind: 'tri' },
   { x: -50, y:  10, angle:  -25, color: '#38c6f0', kind: 'square' },
   { x:  30, y:  60, angle:   45, color: '#ec4899', kind: 'circle' },
@@ -41,42 +43,44 @@ export const Confetti = ({ active = true, label }: Props) => {
         </motion.div>
       )}
       <div className="relative w-0 h-0 mt-10">
-        {PARTICLES.map((p, i) => {
-          const init = { x: 0, y: 0, rotate: 0, opacity: 0, scale: 0.4 }
-          const target = { x: p.x, y: p.y, rotate: p.angle, opacity: 1, scale: 1 }
-          const fade = { opacity: 0, scale: 0.8 }
-          return (
-            <motion.div
-              key={i}
-              className="absolute"
-              style={{ left: 0, top: 0 }}
-              initial={reduced ? target : init}
-              animate={reduced
-                ? target
-                : { x: [0, p.x], y: [0, p.y], rotate: [0, p.angle], opacity: [0, 1, 1, 0], scale: [0.4, 1, 1, 0.8] }
-              }
-              transition={reduced ? { duration: 0 } : { duration: 1.2, delay: i * 0.04, ease: 'easeOut', times: [0, 0.3, 0.7, 1] }}
-              {...(reduced ? { exit: fade } : {})}
-            >
-              {p.kind === 'tri' && (
-                <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
-                  <path d="M6 1L11 11L1 11Z" fill={p.color} />
-                </svg>
-              )}
-              {p.kind === 'square' && (
-                <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
-                  <rect x="1" y="1" width="10" height="10" rx="1.5" fill={p.color} />
-                </svg>
-              )}
-              {p.kind === 'circle' && (
-                <svg viewBox="0 0 12 12" width="9" height="9" aria-hidden="true">
-                  <circle cx="6" cy="6" r="5" fill={p.color} />
-                </svg>
-              )}
-            </motion.div>
-          )
-        })}
+        {PARTICLES.map((p, i) => (
+          <motion.div
+            key={i}
+            className="absolute"
+            style={{ left: 0, top: 0 }}
+            initial={reduced ? false : { x: 0, y: 0, rotate: 0, opacity: 0, scale: 0.4 }}
+            animate={reduced
+              ? { x: p.x, y: p.y, rotate: p.angle, opacity: 1, scale: 1 }
+              : { x: [0, p.x], y: [0, p.y], rotate: [0, p.angle], opacity: [0, 1, 1, 0], scale: [0.4, 1, 1, 0.8] }
+            }
+            transition={reduced ? { duration: 0 } : { duration: 1.2, delay: i * 0.04, ease: 'easeOut', times: [0, 0.3, 0.7, 1] }}
+          >
+            <Particle kind={p.kind} color={p.color} />
+          </motion.div>
+        ))}
       </div>
     </div>
+  )
+}
+
+const Particle = ({ kind, color }: { kind: ParticleKind; color: string }) => {
+  if (kind === 'tri') {
+    return (
+      <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+        <path d="M6 1L11 11L1 11Z" fill={color} />
+      </svg>
+    )
+  }
+  if (kind === 'square') {
+    return (
+      <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true">
+        <rect x="1" y="1" width="10" height="10" rx="1.5" fill={color} />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 12 12" width="9" height="9" aria-hidden="true">
+      <circle cx="6" cy="6" r="5" fill={color} />
+    </svg>
   )
 }

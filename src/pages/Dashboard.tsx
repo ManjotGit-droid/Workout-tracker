@@ -16,7 +16,7 @@ import { computeStreak, isStreakAtRisk } from '../utils/streak'
 import { computeMuscleRecency, recencyFill } from '../utils/muscleRecency'
 import { useLongPress } from '../hooks/useLongPress'
 import { WorkoutContextMenu } from '../components/workout/WorkoutContextMenu'
-import type { MuscleGroupId, WorkoutSession } from '../types'
+import type { Exercise, MuscleGroupId, MuscleGroupState, WorkoutSession } from '../types'
 
 // Stagger variants reused for the top-muscles and recent-sessions lists.
 const listContainer = {
@@ -76,41 +76,14 @@ export const Dashboard = () => {
     () => computeMuscleRecency(profile.workoutHistory, customExercises),
     [profile.workoutHistory, customExercises],
   )
-  const recencyFillMap = useMemo(() => {
-    const out: Partial<Record<MuscleGroupId, string>> = {}
-    for (const k of Object.keys(recencyMap) as MuscleGroupId[]) {
-      out[k] = recencyFill(recencyMap[k])
-    }
-    return out
-  }, [recencyMap])
+  const recencyFillMap = useMemo<Partial<Record<MuscleGroupId, string>>>(
+    () => Object.fromEntries(
+      (Object.keys(recencyMap) as MuscleGroupId[]).map((k) => [k, recencyFill(recencyMap[k])]),
+    ),
+    [recencyMap],
+  )
 
-  // ── Skeleton state during initial IDB hydration ──────────────────────────
-  if (!ready) {
-    return (
-      <div className="min-h-screen">
-        <div className="px-4 pt-6 pb-3 flex items-center justify-between">
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-7 w-44" />
-          </div>
-          <Skeleton className="w-14 h-14" rounded />
-        </div>
-        <div className="px-4 mb-4">
-          <Skeleton className="h-72 w-full" />
-        </div>
-        <div className="px-4 mb-4 grid grid-cols-2 gap-3">
-          <Skeleton className="col-span-2 h-24" />
-          <Skeleton className="h-20" />
-          <Skeleton className="h-20" />
-        </div>
-        <div className="px-4">
-          <Skeleton className="h-12 w-full mb-2" />
-          <Skeleton className="h-12 w-full mb-2" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      </div>
-    )
-  }
+  if (!ready) return <DashboardSkeleton />
 
   return (
     <div className="min-h-screen relative">
@@ -358,16 +331,40 @@ export const Dashboard = () => {
   )
 }
 
+// Initial-hydration placeholder. Mirrors the post-load layout so the page
+// shape doesn't jump when real data arrives.
+const DashboardSkeleton = () => (
+  <div className="min-h-screen">
+    <div className="px-4 pt-6 pb-3 flex items-center justify-between">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-7 w-44" />
+      </div>
+      <Skeleton className="w-14 h-14" rounded />
+    </div>
+    <div className="px-4 mb-4">
+      <Skeleton className="h-72 w-full" />
+    </div>
+    <div className="px-4 mb-4 grid grid-cols-2 gap-3">
+      <Skeleton className="col-span-2 h-24" />
+      <Skeleton className="h-20" />
+      <Skeleton className="h-20" />
+    </div>
+    <div className="px-4">
+      <Skeleton className="h-12 w-full mb-2" />
+      <Skeleton className="h-12 w-full mb-2" />
+      <Skeleton className="h-12 w-full" />
+    </div>
+  </div>
+)
+
 // Module-scope card so the inputs / refs stay stable across re-renders and
 // long-press handlers don't end up bound to a freshly-recreated closure on
 // every tick.
-type CustomExercises = import('../types').AppState['customExercises']
-type MuscleGroups = import('../types').UserProfile['muscleGroups']
-
 interface RecentCardProps {
   workout: WorkoutSession
-  customExercises: CustomExercises
-  muscleGroups: MuscleGroups
+  customExercises: Exercise[]
+  muscleGroups: Record<MuscleGroupId, MuscleGroupState>
   variants: typeof listItem
   onLongPress: () => void
 }

@@ -26,7 +26,7 @@ import { ChartsTab } from '../components/charts/ChartsTab'
 import { WorkoutContextMenu } from '../components/workout/WorkoutContextMenu'
 import { useLongPress } from '../hooks/useLongPress'
 import { evaluateAchievements, TIER_STYLES } from '../utils/achievements'
-import type { WorkoutSession } from '../types'
+import type { Exercise, WorkoutSession } from '../types'
 
 type Tab = 'muscles' | 'records' | 'body' | 'charts' | 'history' | 'data'
 
@@ -419,11 +419,9 @@ export const Progress = () => {
 }
 
 // Module-scope row so long-press handlers stay bound to stable references.
-type CustomExercises = import('../types').AppState['customExercises']
-
 interface HistoryRowProps {
   workout: WorkoutSession
-  customExercises: CustomExercises
+  customExercises: Exercise[]
   onLongPress: () => void
 }
 

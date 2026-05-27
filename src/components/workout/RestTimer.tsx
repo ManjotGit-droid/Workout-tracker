@@ -27,33 +27,31 @@ const fmt = (s: number): string => {
  */
 export const RestTimer = ({ startedAt, duration, onSkip, onAdjust }: Props) => {
   const [now, setNow] = useState<number>(() => Date.now())
-  const [didVibrate, setDidVibrate] = useState(false)
 
   useEffect(() => {
     if (startedAt === null) return
-    setDidVibrate(false)
     setNow(Date.now())
     const id = window.setInterval(() => setNow(Date.now()), 250)
     return () => window.clearInterval(id)
   }, [startedAt])
 
-  if (startedAt === null) return null
-
-  const elapsedSec = Math.floor((now - startedAt) / 1000)
+  const elapsedSec = startedAt === null ? 0 : Math.floor((now - startedAt) / 1000)
   const remainingSec = duration - elapsedSec
-  const done = remainingSec <= 0
+  const done = startedAt !== null && remainingSec <= 0
   const pct = Math.max(0, Math.min(100, (elapsedSec / duration) * 100))
 
-  if (done && !didVibrate) {
+  // Single-shot haptic when the countdown lands on zero. Bound to the rest
+  // session via `startedAt`; resets cleanly when the user starts another set.
+  useEffect(() => {
+    if (!done) return
     try {
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        navigator.vibrate?.([100, 50, 100])
-      }
+      navigator.vibrate?.([100, 50, 100])
     } catch {
       // best-effort — Safari etc. may reject
     }
-    setDidVibrate(true)
-  }
+  }, [done])
+
+  if (startedAt === null) return null
 
   return (
     <AnimatePresence>

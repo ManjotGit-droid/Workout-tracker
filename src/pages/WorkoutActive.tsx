@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../store/AppContext'
@@ -200,21 +200,22 @@ export const WorkoutActive = () => {
 
   // Recently-used exercise chips (B9) — last 6 distinct exercise IDs across
   // recent completed workouts, minus the ones already in the active session.
-  const recentlyUsedExercises = (() => {
+  const recentlyUsedExercises = useMemo<Exercise[]>(() => {
     const inSession = new Set(activeWorkout?.exercises.map((e) => e.exerciseId) ?? [])
+    const exById = new Map(allExercises.map((e) => [e.id, e]))
     const seen = new Set<string>()
     const out: Exercise[] = []
     for (const w of state.profile.workoutHistory) {
       for (const we of w.exercises) {
         if (seen.has(we.exerciseId) || inSession.has(we.exerciseId)) continue
         seen.add(we.exerciseId)
-        const ex = allExercises.find((x) => x.id === we.exerciseId)
+        const ex = exById.get(we.exerciseId)
         if (ex) out.push(ex)
         if (out.length >= 6) return out
       }
     }
     return out
-  })()
+  }, [activeWorkout?.exercises, state.profile.workoutHistory, allExercises])
 
   const handleAddExercise = async (exerciseId: string) => {
     await addExercise(exerciseId)
