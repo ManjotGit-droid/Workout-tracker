@@ -15,13 +15,15 @@ export const AppShell = () => {
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   // Show onboarding only after IDB hydration and only if the user is new.
+  // `totalWorkouts` is derived from `workoutHistory.length` in the reducer,
+  // so a single check is sufficient.
   useEffect(() => {
     if (!ready) return
     const onboarded = localStorage.getItem('onboarded') === '1'
-    if (!onboarded && state.profile.totalWorkouts === 0 && state.profile.workoutHistory.length === 0) {
+    if (!onboarded && state.profile.workoutHistory.length === 0) {
       setShowOnboarding(true)
     }
-  }, [ready, state.profile.totalWorkouts, state.profile.workoutHistory.length])
+  }, [ready, state.profile.workoutHistory.length])
 
   return (
     <div className="min-h-screen bg-bg text-text font-sans theme-fade">

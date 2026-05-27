@@ -18,10 +18,11 @@ export const App = () => (
     <ThemeProvider>
       {/* UserProvider sits above AppProvider so changing the active user
           reloads the page, which causes AppProvider to remount and rehydrate
-          from the new user's IndexedDB. */}
+          from the new user's IndexedDB. ToastProvider must wrap AppProvider
+          because AppProvider's reportWriteError helper calls useToast(). */}
       <UserProvider>
-        <AppProvider>
-          <ToastProvider>
+        <ToastProvider>
+          <AppProvider>
             <BrowserRouter>
               <Routes>
                 <Route element={<AppShell />}>
@@ -38,8 +39,8 @@ export const App = () => (
                 </Route>
               </Routes>
             </BrowserRouter>
-          </ToastProvider>
-        </AppProvider>
+          </AppProvider>
+        </ToastProvider>
       </UserProvider>
     </ThemeProvider>
   )
