@@ -317,7 +317,7 @@ export const WorkoutActive = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                 >
-                  <NeonCard glow="purple" className="overflow-hidden">
+                  <NeonCard glow="purple" tint="violet" className="overflow-hidden">
                     {/* Header */}
                     <div className="px-3 py-2.5 flex items-center justify-between border-b border-sl-border">
                       <div>

@@ -98,7 +98,7 @@ export const MobilityView = () => {
   return (
     <div className="flex flex-col gap-3">
       {/* Hero / streak card */}
-      <NeonCard className="p-4" glow="purple">
+      <NeonCard className="p-4" glow="purple" tint="cyan">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-display font-bold tracking-tight text-text">Weekly Mobility</h2>
@@ -150,7 +150,7 @@ export const MobilityView = () => {
       </div>
 
       {/* Selected-day session */}
-      <NeonCard className="p-4">
+      <NeonCard className="p-4" tint="violet">
         <div className="flex items-baseline justify-between mb-1 gap-2">
           <h3 className="text-base font-display font-bold text-text">{selectedSession.theme}</h3>
           <span className="text-[11px] font-mono text-text-muted whitespace-nowrap">
@@ -192,7 +192,7 @@ export const MobilityView = () => {
       </NeonCard>
 
       {/* Why these? explainer */}
-      <NeonCard className="p-3">
+      <NeonCard className="p-3" tint="emerald">
         <button
           onClick={() => setShowWhy((v) => !v)}
           className="w-full flex items-center justify-between text-left"

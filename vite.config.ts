@@ -24,14 +24,16 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        // Activate the new SW the moment it installs and take over open
-        // tabs immediately — fixes the white/black screen the user saw
-        // when a stale broken build kept being served between deploys.
+        // Install the new SW immediately on download (skipWaiting) but DO
+        // NOT claim already-open clients — clientsClaim caused a silent
+        // mid-session reload (the black-screen-on-Start-workout bug the
+        // user saw in the recording). The new SW now activates on the
+        // very next full page load, which is the lowest-disruption path.
         skipWaiting: true,
-        clientsClaim: true,
-        // Drop any caches that aren't part of the current precache list so
-        // we don't keep serving outdated assets after a rapid follow-up
-        // build (e.g. the prior white-screen hotfix).
+        clientsClaim: false,
+        // Prune any caches that aren't part of the current precache list
+        // so we don't keep serving outdated assets after a rapid
+        // follow-up build.
         cleanupOutdatedCaches: true,
       },
     }),

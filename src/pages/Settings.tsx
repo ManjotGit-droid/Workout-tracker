@@ -107,7 +107,7 @@ export const Settings = () => {
       <div className="px-4 py-3 flex flex-col gap-4">
         {/* ── Profile ───────────────────────────────────────── */}
         <SectionLabel>Profile</SectionLabel>
-        <NeonCard className="p-4">
+        <NeonCard className="p-4" tint="cyan">
           <button
             onClick={() => navigate('/users')}
             className="w-full flex items-center gap-3 text-left"
@@ -138,7 +138,7 @@ export const Settings = () => {
 
         {/* ── Appearance ────────────────────────────────────── */}
         <SectionLabel>Appearance</SectionLabel>
-        <NeonCard className="p-4">
+        <NeonCard className="p-4" tint="amber">
           <h3 className="text-sm font-display font-bold mb-1">Theme</h3>
           <p className="text-xs font-mono text-text-muted mb-3">
             Reduce-motion is honoured automatically from your OS settings.
@@ -160,7 +160,7 @@ export const Settings = () => {
 
         {/* ── Workout ───────────────────────────────────────── */}
         <SectionLabel>Workout</SectionLabel>
-        <NeonCard className="p-4">
+        <NeonCard className="p-4" tint="violet">
           <h3 className="text-sm font-display font-bold mb-1">Weight unit</h3>
           <p className="text-xs font-mono text-text-muted mb-3">
             Display unit for weights everywhere. Saved values stay in kilograms internally, so switching never changes your numbers.
@@ -180,7 +180,7 @@ export const Settings = () => {
           </div>
         </NeonCard>
 
-        <NeonCard className="p-4">
+        <NeonCard className="p-4" tint="indigo">
           <div className="flex items-baseline justify-between mb-1">
             <h3 className="text-sm font-display font-bold">Default rest timer</h3>
             <span className="text-xs font-mono text-brand tabular-nums">{fmtRest(restDuration)}</span>
@@ -205,7 +205,7 @@ export const Settings = () => {
 
         {/* ── Backup ────────────────────────────────────────── */}
         <SectionLabel>Backup</SectionLabel>
-        <NeonCard className="p-4">
+        <NeonCard className="p-4" tint="emerald">
           <div className="flex items-center justify-between gap-3 mb-1.5">
             <h3 className="text-sm font-display font-bold">Monthly auto-backup</h3>
             <button
@@ -243,7 +243,7 @@ export const Settings = () => {
 
         {/* ── Data ──────────────────────────────────────────── */}
         <SectionLabel>Data</SectionLabel>
-        <NeonCard className="p-4">
+        <NeonCard className="p-4" tint="teal">
           <h3 className="text-sm font-display font-bold mb-1">Export / import</h3>
           <p className="text-xs font-mono text-text-muted mb-3">
             Download all your workouts, body entries, and muscle XP as a JSON file. Importing replaces every record.
@@ -277,7 +277,7 @@ export const Settings = () => {
 
         {/* ── Danger zone ───────────────────────────────────── */}
         <SectionLabel>Danger zone</SectionLabel>
-        <NeonCard className="p-4">
+        <NeonCard className="p-4" tint="rose">
           <h3 className="text-sm font-display font-bold mb-1 text-danger">Reset all data</h3>
           <p className="text-xs font-mono text-text-muted mb-3">
             Deletes all workouts and muscle XP. Custom exercises stay. This cannot be undone.
@@ -308,7 +308,7 @@ export const Settings = () => {
 
         {/* ── About ─────────────────────────────────────────── */}
         <SectionLabel>About</SectionLabel>
-        <NeonCard className="p-4">
+        <NeonCard className="p-4" tint="pink">
           <h3 className="text-sm font-display font-bold mb-1">Solo Gym Tracker</h3>
           <p className="text-xs font-mono text-text-muted mb-2">
             Fully offline PWA. Version {APP_VERSION}.

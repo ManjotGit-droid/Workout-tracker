@@ -111,7 +111,7 @@ export const MuscleDetail = () => {
           <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">Personal Records</div>
           <div className="flex flex-col gap-2">
             {prsForMuscle.slice(0, 3).map(({ ex, pr }) => (
-              <NeonCard key={ex.id} className="px-3 py-2 flex items-center justify-between">
+              <NeonCard key={ex.id} className="px-3 py-2 flex items-center justify-between" tint="indigo">
                 <div>
                   <div className="text-sm font-display font-semibold">{ex.name}</div>
                   <div className="text-xs font-mono text-sl-muted">{formatDate(pr!.date)}</div>
@@ -143,7 +143,7 @@ export const MuscleDetail = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.05 }}
               >
-                <NeonCard className="px-3 py-2.5 flex items-start justify-between gap-2">
+                <NeonCard className="px-3 py-2.5 flex items-start justify-between gap-2" tint="amber">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-display font-semibold">{ex.name}</span>
@@ -189,7 +189,7 @@ export const MuscleDetail = () => {
             {recentSessions.map((w) => {
               const xp = w.xpGained[muscleId] ?? 0
               return (
-                <NeonCard key={w.id} className="px-3 py-2 flex items-center justify-between">
+                <NeonCard key={w.id} className="px-3 py-2 flex items-center justify-between" tint="cyan">
                   <span className="text-xs font-mono text-sl-muted">{formatDate(w.date)}</span>
                   <span className="text-xs font-mono" style={{ color: glow || '#9333ea' }}>
                     +{xp} XP

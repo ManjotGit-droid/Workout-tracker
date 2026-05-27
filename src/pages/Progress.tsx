@@ -70,13 +70,13 @@ export const Progress = () => {
           <div>
             {/* Overall stats */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <NeonCard className="p-3 text-center" glow="purple">
-                <div className="text-2xl font-mono font-bold text-sl-purple">{state.profile.totalWorkouts}</div>
-                <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Total Workouts</div>
+              <NeonCard className="p-3 text-center" tint="cyan" glow="purple">
+                <div className="text-2xl font-mono font-bold text-white">{state.profile.totalWorkouts}</div>
+                <div className="text-xs font-mono text-text/80 uppercase tracking-wider mt-0.5">Total Workouts</div>
               </NeonCard>
-              <NeonCard className="p-3 text-center" glow="blue">
-                <div className="text-2xl font-mono font-bold text-sl-blue">{state.profile.totalSets}</div>
-                <div className="text-xs font-mono text-sl-muted uppercase tracking-wider mt-0.5">Total Sets</div>
+              <NeonCard className="p-3 text-center" tint="violet" glow="blue">
+                <div className="text-2xl font-mono font-bold text-white">{state.profile.totalSets}</div>
+                <div className="text-xs font-mono text-text/80 uppercase tracking-wider mt-0.5">Total Sets</div>
               </NeonCard>
             </div>
 

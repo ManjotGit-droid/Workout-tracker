@@ -219,7 +219,7 @@ export const ExerciseLibrary = () => {
                   const est1rmKg = estimate1RM(pr.weightKg, pr.reps)
                   const est1rmDisp = fromKg(est1rmKg, state.weightUnit)
                   return (
-                    <NeonCard key={pr.exerciseId} className="p-2.5" glow="gold">
+                    <NeonCard key={pr.exerciseId} className="p-2.5" glow="gold" tint="amber">
                       <div className="text-xs font-display font-semibold truncate">{ex.name}</div>
                       <div className="text-lg font-mono font-bold text-sl-gold mt-0.5">
                         {fromKg(pr.weightKg, state.weightUnit).toFixed(1)}

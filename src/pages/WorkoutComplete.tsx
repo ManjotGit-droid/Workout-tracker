@@ -154,7 +154,7 @@ export const WorkoutComplete = () => {
 
       {/* Body diagram with activated muscles */}
       <div className="px-4 mt-4">
-        <NeonCard className="p-3" glow="purple">
+        <NeonCard className="p-3" glow="purple" tint="cyan">
           <div className="text-xs font-mono text-sl-muted text-center mb-2 uppercase tracking-widest">
             Muscles Targeted
           </div>
@@ -182,7 +182,7 @@ export const WorkoutComplete = () => {
 
             return (
               <motion.div key={muscleId} variants={item}>
-                <NeonCard className="px-3 py-2.5">
+                <NeonCard className="px-3 py-2.5" tint="violet">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-sm font-display font-semibold">{meta.displayName}</span>
                     <div className="flex items-center gap-2">
@@ -226,7 +226,7 @@ export const WorkoutComplete = () => {
               </div>
               <div className="flex flex-col gap-1.5">
                 {recs.map((ex) => (
-                  <NeonCard key={ex.id} className="px-3 py-2 flex items-center justify-between">
+                  <NeonCard key={ex.id} className="px-3 py-2 flex items-center justify-between" tint="indigo">
                     <div>
                       <div className="text-sm font-display">{ex.name}</div>
                       <div className="text-xs text-sl-muted font-mono capitalize">{ex.equipment}</div>
@@ -250,7 +250,7 @@ export const WorkoutComplete = () => {
             const ex = allExercises.find((e) => e.id === loggedEx.exerciseId)
             const completed = loggedEx.sets.filter((s) => s.completed)
             return (
-              <NeonCard key={loggedEx.id} className="px-3 py-2 flex justify-between items-center">
+              <NeonCard key={loggedEx.id} className="px-3 py-2 flex justify-between items-center" tint="emerald">
                 <span className="text-sm font-display">{ex?.name ?? loggedEx.exerciseId}</span>
                 <span className="text-xs font-mono text-sl-muted">{completed.length} sets</span>
               </NeonCard>

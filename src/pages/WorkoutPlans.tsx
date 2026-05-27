@@ -117,7 +117,7 @@ export const WorkoutPlans = () => {
 
         <div className="px-4 py-3 pb-24">
           {/* Hero card */}
-          <NeonCard className="p-4 mb-4 overflow-hidden" glow="purple">
+          <NeonCard className="p-4 mb-4 overflow-hidden" glow="purple" tint="cyan">
             <div className="text-xs font-mono uppercase tracking-widest mb-2" style={{ color: plan.accentColor }}>
               {plan.style}
             </div>
@@ -298,7 +298,7 @@ export const WorkoutPlans = () => {
           <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider">Adapts to your training</span>
         </div>
 
-        <NeonCard className="mb-5 overflow-hidden" glow="purple">
+        <NeonCard className="mb-5 overflow-hidden" glow="purple" tint="emerald">
           {/* Always-visible card header — taps to expand/collapse */}
           <button
             onClick={() => setRecommendedExpanded((v) => !v)}
@@ -406,6 +406,7 @@ export const WorkoutPlans = () => {
             <NeonCard
               key={plan.id}
               className="p-4 cursor-pointer relative overflow-hidden"
+              tint="violet"
               onClick={() => setSelectedPlan(plan)}
             >
               <div
