@@ -50,7 +50,7 @@ export const BackupBanner = () => {
       <button
         onClick={handleSave}
         disabled={running}
-        className="app-btn px-3 py-1 rounded-md bg-brand text-white text-[11px] font-semibold disabled:opacity-60"
+        className="app-btn px-3 py-1 rounded-md bg-accent text-accent-ink text-[11px] font-semibold disabled:opacity-60"
       >
         {running ? 'Saving…' : 'Save now'}
       </button>

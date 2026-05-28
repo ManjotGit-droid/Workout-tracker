@@ -110,15 +110,18 @@ export const TIER_COLORS: Record<MuscleTier, {
   },
 }
 
+// Forge: levels scale a single accent (electric lime). Higher level = more
+// saturated fill + stronger halo. Keeps the in-game signal that level 30
+// "looks stronger" than level 3 without dragging in rainbow hues.
 export const getLevelColor = (level: number): { fill: string; glow: string } => {
-  if (level <= 0) return { fill: '#1c1c2e', glow: '' }
-  if (level < 3)  return { fill: '#2d1a3d', glow: '#4a1060' }
-  if (level < 5)  return { fill: '#4a1a7a', glow: '#6a2090' }
-  if (level < 10) return { fill: '#6b21a8', glow: '#9333ea' }
-  if (level < 15) return { fill: '#7c3aed', glow: '#a855f7' }
-  if (level < 20) return { fill: '#4f46e5', glow: '#818cf8' }
-  if (level < 30) return { fill: '#3b82f6', glow: '#60a5fa' }
-  if (level < 50) return { fill: '#0ea5e9', glow: '#38bdf8' }
-  if (level < 75) return { fill: '#eab308', glow: '#facc15' }
-  return { fill: '#f59e0b', glow: '#fde68a' }
+  if (level <= 0) return { fill: '#1c1c1c', glow: '' }
+  if (level < 3)  return { fill: '#1f2410', glow: '#3a4a1a' }
+  if (level < 5)  return { fill: '#2a3318', glow: '#5b7a26' }
+  if (level < 10) return { fill: '#3a4d1d', glow: '#84cc16' }
+  if (level < 15) return { fill: '#4d6b1f', glow: '#a3d92a' }
+  if (level < 20) return { fill: '#5f8a24', glow: '#bdf233' }
+  if (level < 30) return { fill: '#74a52a', glow: '#caff3a' }
+  if (level < 50) return { fill: '#84cc16', glow: '#caff3a' }
+  if (level < 75) return { fill: '#a3e635', glow: '#d8ff66' }
+  return { fill: '#caff3a', glow: '#e6ff8c' }
 }

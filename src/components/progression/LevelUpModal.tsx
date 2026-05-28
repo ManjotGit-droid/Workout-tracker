@@ -34,18 +34,18 @@ export const LevelUpModal = () => {
             exit={{ scale: 0.8, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           >
-            {/* Glow ring */}
+            {/* Halo ring — soft accent */}
             <motion.div
               className="absolute rounded-full"
-              style={{ width: 240, height: 240, border: '2px solid #9333ea' }}
+              style={{ width: 240, height: 240, border: '2px solid var(--accent)' }}
               animate={{ scale: [0.8, 1.4], opacity: [1, 0] }}
               transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
             />
 
             {/* Level number */}
             <motion.div
-              className="text-8xl font-display font-bold"
-              style={{ color: '#9333ea', textShadow: '0 0 40px #9333ea, 0 0 80px #9333ea80' }}
+              className="text-8xl font-display font-bold hero-number"
+              style={{ color: 'var(--accent)', textShadow: '0 0 24px var(--accent-soft), 0 0 48px var(--accent-soft)' }}
               initial={{ scale: 3, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}

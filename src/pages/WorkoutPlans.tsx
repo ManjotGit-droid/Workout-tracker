@@ -273,7 +273,7 @@ export const WorkoutPlans = () => {
               onClick={() => setView(v)}
               className={`px-4 py-1.5 rounded-full text-[12px] font-mono uppercase tracking-widest transition-colors ${
                 view === v
-                  ? 'bg-brand text-white shadow-button'
+                  ? 'bg-accent text-accent-ink shadow-button'
                   : 'text-text-muted hover:text-text'
               }`}
             >

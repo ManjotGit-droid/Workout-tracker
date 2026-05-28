@@ -8,9 +8,11 @@ interface Props extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimati
 }
 
 const variantStyles = {
-  primary:   'bg-brand text-white hover:bg-brand-bright shadow-button',
-  secondary: 'bg-sunken text-text border border-border hover:border-text-muted',
-  danger:    'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20',
+  // Primary uses the .app-btn-primary class so it picks up the gradient
+  // + soft accent halo defined once in index.css.
+  primary:   'app-btn-primary',
+  secondary: 'app-btn-secondary',
+  danger:    'bg-transparent text-danger border border-danger/40 hover:bg-danger/10',
   ghost:     'bg-transparent text-text-muted hover:text-text',
 }
 
@@ -20,14 +22,6 @@ const sizeStyles = {
   lg: 'px-6 py-3 text-[16px]',
 }
 
-/**
- * Brand-styled button with a consistent press-flicker (whileTap scale).
- *
- * The whileTap is the "haptic visual" stand-in — phones without native
- * haptic feedback get a quick scale dip so a tap feels confirmed.  This
- * is in addition to the `.app-btn:active { scale(0.97) }` CSS rule, which
- * stays as a fallback for mouse / keyboard-trigger presses.
- */
 export const GlowButton = ({
   children,
   variant = 'primary',
@@ -37,7 +31,7 @@ export const GlowButton = ({
   ...props
 }: Props) => (
   <motion.button
-    whileTap={disabled ? undefined : { scale: 0.96 }}
+    whileTap={disabled ? undefined : { scale: 0.97 }}
     transition={{ type: 'spring', stiffness: 600, damping: 30 }}
     disabled={disabled}
     className={`app-btn flex items-center justify-center gap-2 ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}

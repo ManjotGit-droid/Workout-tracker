@@ -37,7 +37,7 @@ const slides = [
     body: 'Tap Start to begin a session. Log sets — weight, reps, optional RPE & notes — and the rest timer auto-runs after each one. Stay consistent: streaks and PRs do the rest.',
     chrome: (
       <div className="flex justify-center my-4">
-        <div className="w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-card glow-ring-brand">
+        <div className="w-14 h-14 rounded-full bg-accent text-accent-ink flex items-center justify-center shadow-card glow-ring-brand">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="w-7 h-7">
             <path d="M12 5v14M5 12h14" strokeLinecap="round" />
           </svg>

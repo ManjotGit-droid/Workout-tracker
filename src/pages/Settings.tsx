@@ -8,7 +8,7 @@ import {
   runBackupNow,
 } from '../utils/autoBackup'
 import { useAppStore } from '../store/AppContext'
-import { useTheme } from '../store/ThemeContext'
+import { useTheme, ACCENTS } from '../store/ThemeContext'
 import { useUsers } from '../store/UserContext'
 import { useToast } from '../components/ui/Toast'
 import { exportData, importData, resetData } from '../api/data'
@@ -24,7 +24,7 @@ const REST_PRESETS_SEC = [30, 60, 90, 120, 180, 240]
 
 export const Settings = () => {
   const { state, dispatch } = useAppStore()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, accent, setAccent } = useTheme()
   const { users, activeUser } = useUsers()
   const { toast } = useToast()
   const navigate = useNavigate()
@@ -138,7 +138,7 @@ export const Settings = () => {
 
         {/* ── Appearance ────────────────────────────────────── */}
         <SectionLabel>Appearance</SectionLabel>
-        <NeonCard className="p-4" tint="amber">
+        <NeonCard className="p-4">
           <h3 className="text-sm font-display font-bold mb-1">Theme</h3>
           <p className="text-xs font-mono text-text-muted mb-3">
             Reduce-motion is honoured automatically from your OS settings.
@@ -149,12 +149,55 @@ export const Settings = () => {
                 key={t}
                 onClick={() => setTheme(t)}
                 className={`flex-1 py-2 rounded-lg border text-sm font-mono uppercase tracking-widest transition-colors ${
-                  theme === t ? 'bg-brand border-brand text-white' : 'border-border text-text-muted hover:border-brand/40'
+                  theme === t
+                    ? 'border-accent text-accent-ink'
+                    : 'border-border text-text-muted hover:border-border-soft'
                 }`}
+                style={theme === t ? { background: 'var(--accent)' } : undefined}
               >
                 {t}
               </button>
             ))}
+          </div>
+        </NeonCard>
+
+        <NeonCard className="p-4">
+          <h3 className="text-sm font-display font-bold mb-1">Accent</h3>
+          <p className="text-xs font-mono text-text-muted mb-3">
+            Recolours buttons, progress fills, halos, and stat highlights across the app.
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {ACCENTS.map((opt) => {
+              const isActive = accent === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setAccent(opt.id)}
+                  aria-pressed={isActive}
+                  aria-label={opt.label}
+                  className={`flex flex-col items-center gap-1.5 py-2.5 rounded-lg border transition-colors ${
+                    isActive
+                      ? 'border-text-muted bg-sunken'
+                      : 'border-border hover:border-border-soft'
+                  }`}
+                >
+                  <span
+                    className="w-7 h-7 rounded-full"
+                    style={{
+                      background: opt.swatch,
+                      boxShadow: isActive
+                        ? `0 0 0 2px var(--bg-elevated), 0 0 0 4px ${opt.swatch}`
+                        : 'inset 0 0 0 1px rgba(0,0,0,0.15)',
+                    }}
+                  />
+                  <span className={`text-[10px] font-mono uppercase tracking-widest ${
+                    isActive ? 'text-text' : 'text-text-muted'
+                  }`}>
+                    {opt.label}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </NeonCard>
 
@@ -171,7 +214,7 @@ export const Settings = () => {
                 key={u}
                 onClick={() => dispatch({ type: 'SET_WEIGHT_UNIT', unit: u })}
                 className={`flex-1 py-2 rounded-lg border text-sm font-mono uppercase tracking-widest transition-colors ${
-                  state.weightUnit === u ? 'bg-brand border-brand text-white' : 'border-border text-text-muted hover:border-brand/40'
+                  state.weightUnit === u ? 'bg-accent border-accent text-accent-ink' : 'border-border text-text-muted hover:border-border-soft'
                 }`}
               >
                 {u}
@@ -194,7 +237,7 @@ export const Settings = () => {
                 key={s}
                 onClick={() => setRestDuration(s)}
                 className={`py-2 rounded-lg border text-sm font-mono tabular-nums transition-colors ${
-                  restDuration === s ? 'bg-brand border-brand text-white' : 'border-border text-text-muted hover:border-brand/40'
+                  restDuration === s ? 'bg-accent border-accent text-accent-ink' : 'border-border text-text-muted hover:border-border-soft'
                 }`}
               >
                 {fmtRest(s)}

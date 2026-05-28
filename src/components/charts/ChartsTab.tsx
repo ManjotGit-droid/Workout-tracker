@@ -210,7 +210,7 @@ interface DeltaProps {
 const DeltaCard = ({ label, current, prior, unit }: DeltaProps) => {
   const pct = pctChange(current, prior)
   const direction = pct === null ? 'neutral' : pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral'
-  const color = direction === 'up' ? '#22ee99' : direction === 'down' ? '#ff4d6d' : 'var(--text-muted)'
+  const color = direction === 'up' ? 'var(--success)' : direction === 'down' ? 'var(--danger)' : 'var(--text-muted)'
   const arrow = direction === 'up' ? '▲' : direction === 'down' ? '▼' : '·'
   return (
     <div className="flex flex-col gap-0.5">
@@ -346,17 +346,17 @@ export const ChartsTab = () => {
       <div className="grid grid-cols-2 gap-3">
         <NeonCard className="p-3">
           <div className="text-xs font-display font-semibold mb-1.5">Body fat %</div>
-          <LineChart data={bodyFatData} color="#f59e0b" unit="%" height={55} />
+          <LineChart data={bodyFatData} color="var(--accent)" unit="%" height={55} />
         </NeonCard>
         <NeonCard className="p-3">
           <div className="text-xs font-display font-semibold mb-1.5">Waist</div>
-          <LineChart data={waistData} color="#a855f7" unit="cm" height={55} />
+          <LineChart data={waistData} color="var(--text-soft)" unit="cm" height={55} />
         </NeonCard>
       </div>
 
       <NeonCard className="p-3">
         <div className="text-xs font-display font-semibold mb-1.5">Resting HR</div>
-        <LineChart data={restingHrData} color="#ef4444" unit="bpm" height={55} />
+        <LineChart data={restingHrData} color="var(--danger)" unit="bpm" height={55} />
       </NeonCard>
 
       {/* Activity heatmap (C8) */}

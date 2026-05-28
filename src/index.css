@@ -3,92 +3,132 @@
 @tailwind utilities;
 
 /* ============================================================
-   THEME TOKENS — Vibrant Neon Light Blue
+   FORGE — design tokens
+   One accent (electric lime). Hairline borders. Restrained glow.
    ============================================================ */
 
+/* ── Theme-driven tokens (canvas, surfaces, text) ─────────────────────
+   These flip on data-theme but DON'T carry accent. Accent tokens live in
+   the [data-accent="X"] blocks below so users can mix any accent with
+   either theme. */
+
 :root,
-:root[data-theme="light"] {
-  color-scheme: light;
-
-  --bg:           #f3f8ff;      /* very light blue tint */
-  --bg-elevated:  #ffffff;
-  --bg-sunken:    #e6efff;
-  --surface:      #ffffff;
-  --border:       #c9deff;
-  --border-soft:  #dbe9ff;
-  --separator:    rgba(0, 120, 255, 0.10);
-
-  --text:         #0b1b35;
-  --text-soft:    #1f3a5f;
-  --text-muted:   #5b78a3;
-  --text-faint:   #a4bcdd;
-
-  --accent:       #00d4ff;      /* neon cyan */
-  --accent-ink:   #001930;
-  --accent-soft:  rgba(0, 212, 255, 0.18);
-
-  --brand:        #00b5ff;      /* electric light blue */
-  --brand-soft:   rgba(0, 181, 255, 0.14);
-  --brand-bright: #38d6ff;
-
-  --gold:         #f59e0b;
-  --danger:       #ff3366;
-  --success:      #22c55e;
-
-  --shadow-card:   0 1px 2px rgba(0, 80, 200, 0.06), 0 4px 16px rgba(0, 120, 255, 0.08);
-  --shadow-modal:  0 12px 48px rgba(0, 80, 200, 0.18);
-  --shadow-button: 0 1px 2px rgba(0, 80, 200, 0.10);
-  --glow-brand:    0 0 14px rgba(0, 181, 255, 0.55), 0 0 32px rgba(0, 181, 255, 0.25);
-  --glow-accent:   0 0 14px rgba(0, 212, 255, 0.6), 0 0 36px rgba(0, 212, 255, 0.3);
-
-  /* Body diagram colours */
-  --body-skin:    #d6e4f5;   /* silhouette fill */
-  --body-muscle:  #a8c0e0;   /* default muscle fill */
-  --body-line:    #6b89b3;   /* anatomical definition strokes */
-  --body-outline: #4a6b96;   /* outer silhouette outline */
-}
-
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg:           #05080f;      /* deep blue-black */
-  --bg-elevated:  #0d1322;
-  --bg-sunken:    #060a13;
-  --surface:      #101729;
-  --border:       #1c2741;
-  --border-soft:  #141c30;
-  --separator:    rgba(0, 200, 255, 0.18);
+  --bg:           #0a0a0a;
+  --bg-elevated:  #121212;
+  --bg-sunken:    #161616;
+  --surface:      #131313;
 
-  --text:         #e8f4ff;
-  --text-soft:    #b0c8e6;
-  --text-muted:   #6b8bb5;
-  --text-faint:   #3a5278;
+  --border:       #1c1c1c;
+  --border-soft:  #262626;
+  --separator:    #1f1f1f;
 
-  --accent:       #00f5ff;      /* hot cyan, dark mode pop */
-  --accent-ink:   #000814;
-  --accent-soft:  rgba(0, 245, 255, 0.18);
+  --text:         #fafafa;
+  --text-soft:    #d4d4d4;
+  --text-muted:   #8a8a8a;
+  --text-faint:   #5a5a5a;
+  --text-ghost:   #3a3a3a;
 
-  /* Brand desaturated slightly vs. light mode for WCAG AA on small text
-     (#00d4ff was borderline against --bg / --text-muted at 12px). */
-  --brand:        #38c6f0;
-  --brand-soft:   rgba(56, 198, 240, 0.20);
-  --brand-bright: #6ee7ff;
+  --accent-ink:   #0a0a0a;          /* text on accent — near-black per spec */
 
-  --gold:         #fbbf24;
-  --danger:       #ff4d6d;
-  --success:      #22ee99;
+  --gold:         #d4a017;
+  --danger:       #ef4444;
+  --success:      #22c55e;
 
-  --shadow-card:   0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 24px rgba(0, 150, 255, 0.10);
-  --shadow-modal:  0 16px 60px rgba(0, 0, 0, 0.65);
-  --shadow-button: 0 1px 4px rgba(0, 150, 255, 0.30);
-  --glow-brand:    0 0 18px rgba(0, 212, 255, 0.65), 0 0 44px rgba(0, 212, 255, 0.30);
-  --glow-accent:   0 0 22px rgba(0, 245, 255, 0.75), 0 0 50px rgba(0, 245, 255, 0.35);
+  --shadow-card:   0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-modal:  0 24px 64px rgba(0, 0, 0, 0.72);
+  --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.4);
 
-  /* Body diagram colours — dark theme */
-  --body-skin:    #1b2740;   /* silhouette fill */
-  --body-muscle:  #2e4267;   /* default muscle fill */
-  --body-line:    #4a6090;   /* anatomical definition strokes */
-  --body-outline: #6080b0;   /* outer silhouette outline */
+  --body-skin:    #1a1a1a;
+  --body-muscle:  #262626;
+  --body-line:    #3a3a3a;
+  --body-outline: #4a4a4a;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg:           #fafaf9;
+  --bg-elevated:  #ffffff;
+  --bg-sunken:    #f3f3f2;
+  --surface:      #ffffff;
+
+  --border:       #e7e5e4;
+  --border-soft:  #d6d3d1;
+  --separator:    #ececec;
+
+  --text:         #0a0a0a;
+  --text-soft:    #404040;
+  --text-muted:   #737373;
+  --text-faint:   #a3a3a3;
+  --text-ghost:   #d4d4d4;
+
+  --accent-ink:   #0a0a0a;
+
+  --gold:         #b45309;
+  --danger:       #dc2626;
+  --success:      #16a34a;
+
+  --shadow-card:   0 1px 2px rgba(15, 15, 15, 0.04), 0 4px 16px rgba(15, 15, 15, 0.04);
+  --shadow-modal:  0 16px 56px rgba(15, 15, 15, 0.14);
+  --shadow-button: 0 1px 2px rgba(15, 15, 15, 0.08);
+
+  --body-skin:    #f0eeec;
+  --body-muscle:  #d6d3d1;
+  --body-line:    #a8a29e;
+  --body-outline: #78716c;
+}
+
+/* ── Accent palettes ──────────────────────────────────────────────────
+   The default (no data-accent attribute) is lime; the explicit
+   [data-accent="lime"] block restates the same values so the picker
+   can click between options cleanly. */
+
+:root,
+:root[data-accent="lime"] {
+  --accent:        #C8F751;
+  --accent-soft:   rgba(200, 247, 81, 0.14);
+  --accent-line:   rgba(200, 247, 81, 0.30);
+  --brand:         #C8F751;
+  --brand-soft:    rgba(200, 247, 81, 0.14);
+  --brand-bright:  #DEFF7A;
+  --glow-brand:    0 0 14px rgba(200, 247, 81, 0.28), 0 0 28px rgba(200, 247, 81, 0.12);
+  --glow-accent:   0 0 20px rgba(200, 247, 81, 0.32), 0 0 40px rgba(200, 247, 81, 0.14);
+}
+
+:root[data-accent="cyan"] {
+  --accent:        #5DC8E8;
+  --accent-soft:   rgba(93, 200, 232, 0.14);
+  --accent-line:   rgba(93, 200, 232, 0.30);
+  --brand:         #5DC8E8;
+  --brand-soft:    rgba(93, 200, 232, 0.14);
+  --brand-bright:  #8FE0F0;
+  --glow-brand:    0 0 14px rgba(93, 200, 232, 0.32), 0 0 28px rgba(93, 200, 232, 0.14);
+  --glow-accent:   0 0 20px rgba(93, 200, 232, 0.38), 0 0 40px rgba(93, 200, 232, 0.16);
+}
+
+:root[data-accent="orange"] {
+  --accent:        #F09445;
+  --accent-soft:   rgba(240, 148, 69, 0.14);
+  --accent-line:   rgba(240, 148, 69, 0.30);
+  --brand:         #F09445;
+  --brand-soft:    rgba(240, 148, 69, 0.14);
+  --brand-bright:  #FFAA66;
+  --glow-brand:    0 0 14px rgba(240, 148, 69, 0.30), 0 0 28px rgba(240, 148, 69, 0.14);
+  --glow-accent:   0 0 20px rgba(240, 148, 69, 0.36), 0 0 40px rgba(240, 148, 69, 0.16);
+}
+
+:root[data-accent="violet"] {
+  --accent:        #9A6BE8;
+  --accent-soft:   rgba(154, 107, 232, 0.16);
+  --accent-line:   rgba(154, 107, 232, 0.32);
+  --brand:         #9A6BE8;
+  --brand-soft:    rgba(154, 107, 232, 0.16);
+  --brand-bright:  #B594F0;
+  --glow-brand:    0 0 14px rgba(154, 107, 232, 0.32), 0 0 28px rgba(154, 107, 232, 0.16);
+  --glow-accent:   0 0 20px rgba(154, 107, 232, 0.38), 0 0 40px rgba(154, 107, 232, 0.18);
 }
 
 /* ============================================================
@@ -100,26 +140,16 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
   font-feature-settings: 'cv11', 'ss01', 'ss03';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.011em;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Subtle blue radial vibe in the background */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(0, 181, 255, 0.08), transparent 50%),
-    radial-gradient(circle at 100% 100%, rgba(0, 245, 255, 0.06), transparent 55%);
-}
+/* No more radial vibe — solid canvas. */
 
 html, body, #root { min-height: 100%; }
 html { overscroll-behavior: none; }
@@ -147,10 +177,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(var(--inv
 }
 
 /* ============================================================
-   COMPONENTS
+   COMPONENT PRIMITIVES
    ============================================================ */
 
-/* Card — with optional neon ring on hover */
+/* Card — flat hairline. No tint, no glow. */
 .app-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -159,54 +189,56 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(var(--inv
   transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   position: relative;
 }
-.app-card:hover { border-color: var(--brand-soft); }
+.app-card:hover { border-color: var(--border-soft); }
+.app-card-pressable { cursor: pointer; }
 .app-card-pressable:active { transform: scale(0.985); }
 
-/* Button — vibrant brand */
+/* Button — gradient + halo only on primary */
 .app-btn {
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.011em;
   border-radius: 12px;
-  transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
 }
 .app-btn:active { transform: scale(0.97); }
 .app-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .app-btn-primary {
-  background: var(--brand);
+  background-image: linear-gradient(180deg, var(--brand-bright) 0%, var(--accent) 100%);
   color: var(--accent-ink);
   box-shadow: var(--glow-brand);
 }
-.app-btn-primary:hover {
-  background: var(--brand-bright);
-  box-shadow: var(--glow-brand);
-}
+.app-btn-primary:hover { box-shadow: var(--glow-accent); }
 
 .app-btn-secondary {
-  background: var(--bg-sunken);
+  background: var(--bg-elevated);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-soft);
 }
-.app-btn-secondary:hover { border-color: var(--brand); }
+.app-btn-secondary:hover { border-color: var(--text-muted); }
 
-/* Glow ring utility */
-.glow-ring {
+/* Halo utility — kept for legacy call sites. Forge uses sparingly. */
+.glow-ring,
+.glow-ring-brand {
   box-shadow: var(--glow-brand);
 }
 
 /* Modal backdrop */
 .modal-backdrop {
-  background: rgba(0, 5, 20, 0.6);
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
-/* Animations */
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.fade-up { animation: fadeUp 0.3s ease both; }
+.fade-up { animation: fadeUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) both; }
 
 @keyframes shimmerSlide {
   from { transform: translateX(-100%); }
@@ -214,123 +246,66 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(var(--inv
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.4); }
-  50%      { box-shadow: 0 0 24px rgba(0, 212, 255, 0.8), 0 0 48px rgba(0, 212, 255, 0.35); }
+  0%, 100% { box-shadow: 0 0 6px var(--accent-soft); }
+  50%      { box-shadow: var(--glow-accent); }
 }
 .pulse-glow { animation: pulseGlow 1.8s ease-in-out infinite; }
 
-@keyframes textGlowPulse {
-  0%, 100% { text-shadow: 0 0 6px rgba(0, 212, 255, 0.4); }
-  50%      { text-shadow: 0 0 12px rgba(0, 212, 255, 0.7), 0 0 24px rgba(0, 212, 255, 0.35); }
-}
-.text-pulse-glow { animation: textGlowPulse 2.4s ease-in-out infinite; }
-
-/* ── Glow utilities ──────────────────────────────────────────────────── */
-
-.glow-text-brand {
-  text-shadow: 0 0 8px var(--brand), 0 0 18px rgba(0, 181, 255, 0.35);
-}
-.glow-text-accent {
-  text-shadow: 0 0 8px var(--accent), 0 0 22px rgba(0, 245, 255, 0.4);
-}
-.glow-text-soft {
-  text-shadow: 0 0 6px rgba(0, 212, 255, 0.25);
-}
+/* Text-glow utilities — neutralised. The Forge design has no text-shadow
+   in body copy; legacy callers that ask for these now just get the
+   accent colour applied with no shadow so the rest of the layout still
+   composes. */
+.glow-text-brand,
+.glow-text-accent { color: var(--accent); }
+.glow-text-soft   { color: var(--text-soft); }
 
 .glow-border-brand {
-  box-shadow: inset 0 0 0 1px var(--brand), 0 0 14px rgba(0, 212, 255, 0.35);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
-.glow-ring-brand {
-  box-shadow: 0 0 18px rgba(0, 212, 255, 0.55), 0 0 44px rgba(0, 212, 255, 0.25);
-}
-
-/* Animated gradient sheen for hero numbers (rank, level, big stats) */
-@keyframes sheenSlide {
-  0%   { background-position: -200% 50%; }
-  100% { background-position: 200% 50%; }
-}
+/* `.text-sheen` was an animated rainbow text gradient — flattened to a
+   solid accent so the page reads calm but legacy markup keeps working. */
 .text-sheen {
-  background: linear-gradient(90deg, var(--brand), var(--accent), var(--brand));
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: sheenSlide 5s linear infinite;
-  text-shadow: 0 0 14px rgba(0, 212, 255, 0.35);
+  color: var(--accent);
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  animation: none;
 }
 
-/* ============================================================
-   ACCESSIBILITY
-   ============================================================ */
-
-/* Visible keyboard focus ring on every interactive primitive.
-   Uses :focus-visible so mouse / touch presses don't get an outline,
-   only keyboard navigation and the assistive-tech focus path. */
-.app-btn:focus-visible,
-.app-card-pressable:focus-visible,
-button:focus-visible,
-[role="switch"]:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-  border-radius: inherit;
-}
-/* Inputs get an inset ring instead of an outline so the layout
-   doesn't shift when focus moves through a form. */
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 2px var(--brand);
-}
-
-/* Soft-glass inner highlight for translucent surfaces (BottomNav,
-   PageHeader sticky bars). Subtle 1 px top-edge bright line that
-   reads as glass on dark backgrounds. */
+/* Soft-glass inner highlight — used on BottomNav / sticky header */
 .glass-inner-highlight {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
     inset 0 -1px 0 rgba(0, 0, 0, 0.20);
 }
 :root[data-theme="light"] .glass-inner-highlight {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -1px 0 rgba(0, 80, 200, 0.04);
+    inset 0 -1px 0 rgba(15, 15, 15, 0.04);
 }
 
-/* Set-completed row pulse — single-shot. The `.set-row-pulse` class is
-   toggled briefly on a SetRow when the user marks a set complete. */
+/* Set-completed row pulse — single-shot. */
 @keyframes setRowPulse {
-  0%   { background: var(--brand-soft); }
-  60%  { background: var(--brand-soft); }
+  0%   { background: var(--accent-soft); }
+  60%  { background: var(--accent-soft); }
   100% { background: transparent; }
 }
-.set-row-pulse {
-  animation: setRowPulse 0.6s ease-out forwards;
-}
+.set-row-pulse { animation: setRowPulse 0.6s ease-out forwards; }
 
-/* Skeleton placeholder pulse — used by <Skeleton /> while IDB hydrates. */
+/* Skeleton placeholder pulse */
 @keyframes skeletonPulse {
   0%, 100% { opacity: 0.55; }
   50%      { opacity: 0.85; }
 }
-.skeleton-pulse {
-  animation: skeletonPulse 1.4s ease-in-out infinite;
-}
+.skeleton-pulse { animation: skeletonPulse 1.4s ease-in-out infinite; }
 
-/* Rank-badge "breathe" — pulses brightness only, so it stacks cleanly
-   on top of the inline `box-shadow` driving the tier glow. */
-@keyframes rankBreathe {
-  0%, 100% { filter: brightness(1) saturate(1); }
-  50%      { filter: brightness(1.15) saturate(1.15); }
-}
-.rank-breathe {
-  animation: rankBreathe 2.4s ease-in-out infinite;
-}
+/* Rank-badge breathe — Forge replaces "breathing" rank badge with a
+   static mono letter, but the class is kept so nothing crashes if a
+   page still applies it. Reduce to a no-op static. */
+.rank-breathe { filter: none; animation: none; }
 
-/* Hero number — used on Dashboard stats and XPBar level for the
-   Apple-Fitness big-number feel. Tighter kerning + heavier weight. */
+/* Hero number — Apple-Fitness big-number feel, tabular + tight kerning */
 .hero-number {
   font-feature-settings: 'tnum', 'cv11';
   font-variant-numeric: tabular-nums;
@@ -339,15 +314,29 @@ textarea:focus-visible {
 }
 
 /* ============================================================
+   ACCESSIBILITY
+   ============================================================ */
+
+.app-btn:focus-visible,
+.app-card-pressable:focus-visible,
+button:focus-visible,
+[role="switch"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* ============================================================
    REDUCED MOTION
    ============================================================ */
 
-/* Honour the OS-level "Reduce motion" preference. We don't kill all
-   animations (a static page is jarring); we just shorten them so the
-   end-state appears almost immediately. Framer-motion components that
-   drive *looping* animations need to be gated separately via the
-   `useReducedMotion()` hook — see PatternAnimation.tsx and the body
-   diagram. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

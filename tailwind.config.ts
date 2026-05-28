@@ -6,7 +6,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ── Apple-minimalist tokens (preferred for new code) ──────────────
+        // ── Forge tokens (canvas, lines, text, single accent) ───────────────
         bg:          'var(--bg)',
         elevated:    'var(--bg-elevated)',
         sunken:      'var(--bg-sunken)',
@@ -19,26 +19,32 @@ export default {
         'text-soft': 'var(--text-soft)',
         'text-muted':'var(--text-muted)',
         'text-faint':'var(--text-faint)',
+        'text-ghost':'var(--text-ghost)',
 
         accent:      'var(--accent)',
         'accent-ink': 'var(--accent-ink)',
+        'accent-soft': 'var(--accent-soft)',
+        'accent-line': 'var(--accent-line)',
+
+        // brand-* are legacy aliases — mapped to the single accent.
         brand:       'var(--brand)',
+        'brand-soft':'var(--brand-soft)',
         'brand-bright': 'var(--brand-bright)',
+
         gold:        'var(--gold)',
         danger:      'var(--danger)',
         success:     'var(--success)',
 
-        // ── Legacy sl-* tokens — now mapped to theme variables ────────────
-        // Keeps existing class names working without rewriting every file.
+        // ── Legacy sl-* tokens — kept as alias map so old class names work ──
         sl: {
           bg:        'var(--bg)',
           surface:   'var(--bg-elevated)',
           border:    'var(--border)',
-          purple:    'var(--brand)',
-          'purple-dim':    'var(--brand-soft)',
+          purple:    'var(--accent)',
+          'purple-dim':    'var(--accent-soft)',
           'purple-bright': 'var(--brand-bright)',
-          blue:      'var(--brand)',
-          'blue-dim':'var(--brand-soft)',
+          blue:      'var(--accent)',
+          'blue-dim':'var(--accent-soft)',
           gold:      'var(--gold)',
           'gold-bright': 'var(--accent)',
           text:      'var(--text)',
@@ -55,8 +61,8 @@ export default {
       },
       keyframes: {
         glowPulse: {
-          '0%, 100%': { filter: 'drop-shadow(0 0 2px var(--brand))' },
-          '50%':      { filter: 'drop-shadow(0 0 10px var(--brand))' },
+          '0%, 100%': { filter: 'drop-shadow(0 0 2px var(--accent))' },
+          '50%':      { filter: 'drop-shadow(0 0 8px var(--accent))' },
         },
         rankAppear: {
           '0%':   { transform: 'scale(0.5)', opacity: '0' },
@@ -73,15 +79,15 @@ export default {
         },
       },
       fontFamily: {
-        // SF Pro / Inter — Apple-style sans
-        display: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"Inter"', 'system-ui', 'sans-serif'],
-        sans:    ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"Inter"', 'system-ui', 'sans-serif'],
-        mono:    ['"SF Mono"', 'ui-monospace', 'Menlo', 'monospace'],
+        // Geist for body/UI; Geist Mono for all numerics & eyebrows
+        display: ['"Geist"', '-apple-system', 'BlinkMacSystemFont', '"Inter"', 'system-ui', 'sans-serif'],
+        sans:    ['"Geist"', '-apple-system', 'BlinkMacSystemFont', '"Inter"', 'system-ui', 'sans-serif'],
+        mono:    ['"Geist Mono"', 'ui-monospace', '"SF Mono"', 'Menlo', 'monospace'],
       },
       borderRadius: {
         DEFAULT: '10px',
-        lg: '14px',
-        xl: '18px',
+        lg: '12px',
+        xl: '16px',
         '2xl': '22px',
         '3xl': '28px',
       },
@@ -89,15 +95,15 @@ export default {
         card:   'var(--shadow-card)',
         modal:  'var(--shadow-modal)',
         button: 'var(--shadow-button)',
-        // Legacy aliases mapped to subtle shadow (no neon glow)
-        'neon-purple': '0 0 0 1px var(--brand-soft)',
-        'neon-blue':   '0 0 0 1px var(--brand-soft)',
-        'neon-gold':   '0 0 0 1px rgba(217, 119, 6, 0.18)',
+        // Legacy aliases — flat hairline, no neon.
+        'neon-purple': '0 0 0 1px var(--accent-soft)',
+        'neon-blue':   '0 0 0 1px var(--accent-soft)',
+        'neon-gold':   '0 0 0 1px rgba(212, 160, 23, 0.18)',
         'neon-sm':     'var(--shadow-button)',
       },
       letterSpacing: {
         tight: '-0.02em',
-        snug:  '-0.01em',
+        snug:  '-0.011em',
       },
     },
   },

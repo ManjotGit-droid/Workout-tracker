@@ -186,8 +186,8 @@ export const ExerciseLibrary = () => {
               onClick={() => setCatFilter(cat)}
               className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wider border transition-colors ${
                 catFilter === cat
-                  ? 'bg-sl-purple border-sl-purple text-white'
-                  : 'border-sl-border text-sl-muted hover:border-sl-purple/40'
+                  ? 'bg-accent border-accent text-accent-ink'
+                  : 'border-border text-text-muted hover:border-border-soft'
               }`}
             >
               {cat}
@@ -197,8 +197,8 @@ export const ExerciseLibrary = () => {
             onClick={() => setShowOnlyCustom((v) => !v)}
             className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-mono uppercase tracking-wider border transition-colors ${
               showOnlyCustom
-                ? 'bg-sl-blue border-sl-blue text-white'
-                : 'border-sl-border text-sl-muted hover:border-sl-blue/40'
+                ? 'bg-accent border-accent text-accent-ink'
+                : 'border-border text-text-muted hover:border-border-soft'
             }`}
           >
             Custom only

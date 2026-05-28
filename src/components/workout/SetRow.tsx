@@ -117,7 +117,7 @@ export const SetRow = ({
             aria-label={set.completed ? 'Unmark set complete' : 'Mark set complete'}
             aria-pressed={set.completed}
             className={`w-7 h-8 rounded-lg border flex items-center justify-center transition-all ${
-              set.completed ? 'bg-sl-purple border-sl-purple text-white' : 'border-sl-border text-sl-muted hover:border-sl-purple'
+              set.completed ? 'bg-accent border-accent text-accent-ink' : 'border-border text-text-muted hover:border-accent'
             }`}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">

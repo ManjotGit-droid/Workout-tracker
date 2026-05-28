@@ -468,7 +468,7 @@ export const WorkoutActive = () => {
               key={u}
               onClick={() => dispatch({ type: 'SET_WEIGHT_UNIT', unit: u })}
               className={`px-3 py-1 text-xs font-mono rounded border transition-colors ${
-                weightUnit === u ? 'bg-sl-purple border-sl-purple text-white' : 'border-sl-border text-sl-muted hover:border-sl-purple/40'
+                weightUnit === u ? 'bg-accent border-accent text-accent-ink' : 'border-border text-text-muted hover:border-border-soft'
               }`}
             >
               {u}

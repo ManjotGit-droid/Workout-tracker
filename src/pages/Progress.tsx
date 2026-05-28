@@ -26,6 +26,7 @@ export const Progress = () => {
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('muscles')
   const [contextWorkout, setContextWorkout] = useState<WorkoutSession | null>(null)
+  const [showAchievements, setShowAchievements] = useState(false)
 
   const allExercises = state.customExercises
 
@@ -80,63 +81,88 @@ export const Progress = () => {
               </NeonCard>
             </div>
 
-            {/* Achievements (C9) */}
-            <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2 flex items-baseline justify-between">
-              <span>Achievements</span>
-              <span className="text-text/70 tabular-nums normal-case tracking-normal text-[11px]">{unlockedCount} / {achievements.length}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {achievements.map((a) => {
-                const style = TIER_STYLES[a.tier]
-                const pct = a.progress
-                  ? Math.min(100, (a.progress.current / a.progress.target) * 100)
-                  : a.unlocked ? 100 : 0
-                return (
-                  <div
-                    key={a.id}
-                    className="rounded-xl p-3 border relative overflow-hidden"
-                    style={{
-                      borderColor: a.unlocked ? style.border : 'var(--border)',
-                      background: 'var(--bg-elevated)',
-                      opacity: a.unlocked ? 1 : 0.65,
-                    }}
+            {/* Achievements — collapsible. Default closed so the grid
+                doesn't dominate the page. Counter on the trigger keeps
+                the unlock progress visible without expanding. */}
+            <NeonCard className="p-0 mb-4 overflow-hidden">
+              <button
+                onClick={() => setShowAchievements((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left"
+                aria-expanded={showAchievements}
+              >
+                <span className="text-xs font-mono text-text-muted uppercase tracking-widest">
+                  Achievements
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-text-soft tabular-nums">
+                    {unlockedCount} / {achievements.length}
+                  </span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className={`w-4 h-4 text-text-muted transition-transform ${showAchievements ? 'rotate-180' : ''}`}
                   >
-                    {a.unlocked && (
+                    <polyline points="6 9 12 15 18 9" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+              </button>
+              {showAchievements && (
+                <div className="grid grid-cols-2 gap-2 px-3 pb-3">
+                  {achievements.map((a) => {
+                    const style = TIER_STYLES[a.tier]
+                    const pct = a.progress
+                      ? Math.min(100, (a.progress.current / a.progress.target) * 100)
+                      : a.unlocked ? 100 : 0
+                    return (
                       <div
-                        aria-hidden="true"
-                        className="absolute -top-4 -right-4 w-12 h-12 rounded-full opacity-25"
-                        style={{ background: style.gradient }}
-                      />
-                    )}
-                    <div className="relative">
-                      <div
-                        className="text-xs font-mono uppercase tracking-widest mb-1"
-                        style={{ color: a.unlocked ? style.text : 'var(--text-muted)' }}
+                        key={a.id}
+                        className="rounded-xl p-3 border relative overflow-hidden"
+                        style={{
+                          borderColor: a.unlocked ? style.border : 'var(--border)',
+                          background: 'var(--bg-elevated)',
+                          opacity: a.unlocked ? 1 : 0.65,
+                        }}
                       >
-                        {a.unlocked ? 'Unlocked' : 'Locked'}
-                      </div>
-                      <div className="text-sm font-display font-bold text-text leading-tight">{a.title}</div>
-                      <div className="text-[10px] font-mono text-text-muted leading-snug mt-0.5">
-                        {a.description}
-                      </div>
-                      {a.progress && !a.unlocked && (
-                        <div className="mt-2">
-                          <div className="w-full h-1 bg-border/40 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full"
-                              style={{ width: `${pct}%`, background: style.gradient }}
-                            />
+                        {a.unlocked && (
+                          <div
+                            aria-hidden="true"
+                            className="absolute -top-4 -right-4 w-12 h-12 rounded-full opacity-25"
+                            style={{ background: style.gradient }}
+                          />
+                        )}
+                        <div className="relative">
+                          <div
+                            className="text-xs font-mono uppercase tracking-widest mb-1"
+                            style={{ color: a.unlocked ? style.text : 'var(--text-muted)' }}
+                          >
+                            {a.unlocked ? 'Unlocked' : 'Locked'}
                           </div>
-                          <div className="text-[9px] font-mono text-text-muted/70 mt-0.5 tabular-nums">
-                            {a.progress.current} / {a.progress.target}
+                          <div className="text-sm font-display font-bold text-text leading-tight">{a.title}</div>
+                          <div className="text-[10px] font-mono text-text-muted leading-snug mt-0.5">
+                            {a.description}
                           </div>
+                          {a.progress && !a.unlocked && (
+                            <div className="mt-2">
+                              <div className="w-full h-1 bg-border/40 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{ width: `${pct}%`, background: style.gradient }}
+                                />
+                              </div>
+                              <div className="text-[9px] font-mono text-text-muted/70 mt-0.5 tabular-nums">
+                                {a.progress.current} / {a.progress.target}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </NeonCard>
 
             {/* All muscles with XP bars */}
             <div className="text-xs font-mono text-sl-muted uppercase tracking-widest mb-2">All Muscle Groups</div>
@@ -163,7 +189,7 @@ export const Progress = () => {
                             xp={xp}
                             xpToNext={xpToNextLevel}
                             level={level}
-                            color={glow || '#9333ea'}
+                            color={glow || undefined}
                             showLabel={false}
                           />
                         </div>

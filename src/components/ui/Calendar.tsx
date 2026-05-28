@@ -107,7 +107,7 @@ export const Calendar = ({
               onClick={() => onChange(iso)}
               className={`relative aspect-square rounded-md text-xs font-mono tabular-nums transition-colors ${
                 isSelected
-                  ? 'bg-brand text-white'
+                  ? 'bg-accent text-accent-ink'
                   : isFuture
                     ? 'text-text-muted/30 cursor-not-allowed'
                     : 'text-text hover:bg-brand/10'

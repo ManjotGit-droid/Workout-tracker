@@ -132,7 +132,7 @@ const ModalBody = ({ exercise, onClose }: { exercise: Exercise; onClose: () => v
           </div>
           <div className="flex flex-wrap gap-1.5 mb-4">
             {primary.map((id) => (
-              <span key={id} className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-brand text-white">
+              <span key={id} className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-accent text-accent-ink">
                 {MUSCLE_GROUPS[id]?.shortName ?? id}
               </span>
             ))}

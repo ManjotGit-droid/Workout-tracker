@@ -22,7 +22,7 @@ const tierGlow: Record<Rank, { shadow: string; pulse: boolean }> = {
   B: { shadow: '0 0 16px {g}, 0 0 30px {g}45', pulse: false },
   A: { shadow: '0 0 18px {g}, 0 0 34px {g}50', pulse: false },
   S: { shadow: '0 0 22px {g}, 0 0 44px {g}60, 0 0 64px {g}25', pulse: true },
-  SS: { shadow: '0 0 26px {g}, 0 0 52px #fbbf2480, 0 0 72px #ec489955, 0 0 96px #8b5cf640', pulse: true },
+  SS: { shadow: '0 0 26px {g}, 0 0 52px {g}50, 0 0 78px {g}25', pulse: true },
 }
 
 export const RankBadge = ({ rank, size = 'md' }: Props) => {

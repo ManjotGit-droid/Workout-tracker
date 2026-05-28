@@ -114,7 +114,10 @@ export const WorkoutComplete = () => {
   return (
     <div className="min-h-screen pb-8">
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-sl-purple/20 to-sl-bg pt-8 pb-4 px-4 text-center">
+      <div
+        className="relative overflow-hidden pt-8 pb-4 px-4 text-center"
+        style={{ background: 'linear-gradient(180deg, var(--accent-soft) 0%, var(--bg) 100%)' }}
+      >
         {newPrExerciseIds.length > 0 && <Confetti />}
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
@@ -122,12 +125,14 @@ export const WorkoutComplete = () => {
           transition={{ type: 'spring', stiffness: 200, damping: 15 }}
         >
           <div
-            className="text-5xl font-display font-bold tracking-widest"
-            style={{ textShadow: '0 0 30px #9333ea, 0 0 60px #9333ea40' }}
+            className="text-5xl font-display font-bold tracking-tight hero-number text-accent"
+            style={{ textShadow: '0 0 22px var(--accent-soft)' }}
           >
             COMPLETE
           </div>
-          <div className="text-sl-muted font-mono text-sm mt-1">Quest finished</div>
+          <div className="text-text-muted font-mono text-[11px] mt-1 uppercase tracking-widest">
+            Quest finished
+          </div>
         </motion.div>
 
         {/* Stats row */}
@@ -186,10 +191,10 @@ export const WorkoutComplete = () => {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-sm font-display font-semibold">{meta.displayName}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-sl-muted">Lv.{muscleState.level}</span>
+                      <span className="text-[11px] font-mono text-text-muted tabular-nums">Lv.{muscleState.level}</span>
                       <motion.span
-                        className="text-sm font-mono font-bold"
-                        style={{ color: glow || '#9333ea' }}
+                        className="text-sm font-mono font-bold tabular-nums"
+                        style={{ color: glow || 'var(--accent)' }}
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.3 + idx * 0.08 }}
@@ -202,7 +207,7 @@ export const WorkoutComplete = () => {
                     xp={muscleState.xp}
                     xpToNext={muscleState.xpToNextLevel}
                     level={muscleState.level}
-                    color={glow || '#9333ea'}
+                    color={glow || undefined}
                     showLabel={false}
                     delay={0.4 + idx * 0.08}
                   />

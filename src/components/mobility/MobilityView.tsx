@@ -107,7 +107,7 @@ export const MobilityView = () => {
             </p>
           </div>
           <div className="flex flex-col items-end flex-shrink-0">
-            <div className="px-2.5 py-1 rounded-full bg-brand text-[12px] font-mono font-bold text-white">
+            <div className="px-2.5 py-1 rounded-full bg-accent text-[12px] font-mono font-bold text-accent-ink">
               {currentStreak}🔥
             </div>
             <div className="text-[10px] font-mono text-text-muted mt-1 uppercase tracking-wider">

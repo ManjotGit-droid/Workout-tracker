@@ -178,7 +178,7 @@ export const Dashboard = () => {
                   key={m}
                   onClick={() => setDiagramMode(m)}
                   className={`px-2.5 py-0.5 transition-colors ${
-                    diagramMode === m ? 'bg-brand text-white' : 'text-text-muted hover:text-text'
+                    diagramMode === m ? 'bg-accent text-accent-ink' : 'text-text-muted hover:text-text'
                   }`}
                   aria-pressed={diagramMode === m}
                 >
@@ -276,9 +276,10 @@ export const Dashboard = () => {
                 onClick={() => navigate(`/muscles/${muscle.id}`)}
               >
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-mono font-bold text-white flex-shrink-0"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-mono font-bold flex-shrink-0"
                   style={{
-                    background: `radial-gradient(circle, ${fill}, #0f0f1a)`,
+                    background: `radial-gradient(circle, ${fill}, var(--bg-sunken))`,
+                    color: muscle.level > 4 ? 'var(--accent-ink)' : 'var(--text)',
                     boxShadow: muscle.level > 4 ? `0 0 8px ${glow}` : 'none',
                   }}
                 >
@@ -286,10 +287,10 @@ export const Dashboard = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-display font-semibold">{meta.shortName}</div>
-                  <div className="w-full h-1.5 bg-sl-border rounded-full mt-1 overflow-hidden">
+                  <div className="w-full h-1.5 bg-sunken rounded-full mt-1 overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${pct}%`, backgroundColor: glow || '#4a1a7a' }}
+                      style={{ width: `${pct}%`, backgroundColor: glow || 'var(--accent)' }}
                     />
                   </div>
                 </div>
@@ -414,7 +415,7 @@ const RecentWorkoutCard = ({ workout, customExercises, muscleGroups, variants, o
                 <span
                   key={mId}
                   className="text-xs px-1.5 py-0.5 rounded font-mono"
-                  style={{ backgroundColor: `${fill}80`, color: glow || '#9333ea' }}
+                  style={{ backgroundColor: `${fill}80`, color: glow || 'var(--accent)' }}
                 >
                   {MUSCLE_GROUPS[mId]?.shortName}
                 </span>

@@ -84,21 +84,25 @@ export const MuscleDetail = () => {
       <div
         className="mx-4 mt-4 p-5 rounded-2xl border flex items-center gap-4"
         style={{
-          borderColor: glow || '#4a1a7a',
-          background: `linear-gradient(135deg, ${glow}15 0%, transparent 70%)`,
-          boxShadow: glow ? `0 0 20px ${glow}30` : 'none',
+          borderColor: glow || 'var(--border-soft)',
+          background: glow
+            ? `linear-gradient(135deg, ${glow}14 0%, transparent 70%)`
+            : 'var(--bg-elevated)',
+          boxShadow: glow ? `0 0 18px ${glow}26` : 'var(--shadow-card)',
         }}
       >
         <LevelBadge level={muscleState.level} size="lg" />
         <div className="flex-1 min-w-0">
-          <div className="text-xl font-display font-bold">{meta.displayName}</div>
-          <div className="text-xs font-mono text-sl-muted capitalize mt-0.5">{meta.view} view</div>
+          <div className="text-xl font-display font-bold text-text">{meta.displayName}</div>
+          <div className="text-[11px] font-mono text-text-muted capitalize mt-0.5 uppercase tracking-wider">
+            {meta.view} view
+          </div>
           <div className="mt-2">
             <XPBar
               xp={muscleState.xp}
               xpToNext={muscleState.xpToNextLevel}
               level={muscleState.level}
-              color={glow || '#9333ea'}
+              color={glow || undefined}
               delay={0.2}
             />
           </div>
@@ -117,10 +121,10 @@ export const MuscleDetail = () => {
                   <div className="text-xs font-mono text-sl-muted">{formatDate(pr!.date)}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-mono font-bold text-sl-gold">
+                  <div className="text-sm font-mono font-bold text-gold tabular-nums">
                     {fromKg(pr!.weightKg, state.weightUnit).toFixed(1)} {state.weightUnit}
                   </div>
-                  <div className="text-xs font-mono text-sl-muted">{pr!.reps} reps</div>
+                  <div className="text-[11px] font-mono text-text-muted tabular-nums">{pr!.reps} reps</div>
                 </div>
               </NeonCard>
             ))}
@@ -191,7 +195,7 @@ export const MuscleDetail = () => {
               return (
                 <NeonCard key={w.id} className="px-3 py-2 flex items-center justify-between" tint="cyan">
                   <span className="text-xs font-mono text-sl-muted">{formatDate(w.date)}</span>
-                  <span className="text-xs font-mono" style={{ color: glow || '#9333ea' }}>
+                  <span className="text-xs font-mono tabular-nums" style={{ color: glow || 'var(--accent)' }}>
                     +{xp} XP
                   </span>
                 </NeonCard>

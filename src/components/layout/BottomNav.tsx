@@ -1,5 +1,4 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { useAppStore } from '../../store/AppContext'
 
 interface Tab {
@@ -60,31 +59,25 @@ const tabs: Tab[] = [
 ]
 
 /**
- * Floating pill bottom navigation. Inspired by the MQoS Dribbble shot the
- * user shared — a rounded white capsule that floats above content with five
- * circular slots inside. The active slot is replaced by a filled brand
- * circle that sits raised above the capsule (negative top inset). Spring
- * animation on the active circle gives it a satisfying snap.
+ * Forge bottom nav — floating glass capsule pinned to the bottom safe area.
+ * Active item gets a radial-gradient halo behind the icon and the accent
+ * stroke colour; inactive items are muted. No raised circle, no spring.
  */
 export const BottomNav = () => {
   const location = useLocation()
   const { state } = useAppStore()
   const hasActiveWorkout = !!state.activeWorkout
 
-  const activeIndex = tabs.findIndex((t) =>
-    t.to === '/' ? location.pathname === '/' : location.pathname.startsWith(t.to),
-  )
-
   return (
     <nav
       aria-label="Primary"
-      className="fixed bottom-3 left-3 right-3 z-40 safe-bottom theme-fade pointer-events-none"
+      className="fixed bottom-3 left-3 right-3 z-40 safe-bottom pointer-events-none"
     >
       <div className="relative mx-auto max-w-md pointer-events-auto">
-        {/* Pill capsule */}
-        <div className="relative bg-elevated/95 backdrop-blur-xl border border-border rounded-full shadow-card flex items-center justify-around px-3 py-2 glass-inner-highlight">
-          {tabs.map((tab, i) => {
-            const isActive = i === activeIndex
+        <div className="relative bg-elevated/80 backdrop-blur-xl border border-border rounded-full shadow-card flex items-center justify-around px-3 py-2 glass-inner-highlight">
+          {tabs.map((tab) => {
+            const isActive =
+              tab.to === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.to)
             const isWorkout = tab.to === '/workout'
             return (
               <NavLink
@@ -93,43 +86,26 @@ export const BottomNav = () => {
                 aria-label={tab.label}
                 aria-current={isActive ? 'page' : undefined}
                 className={`relative flex items-center justify-center w-11 h-11 rounded-full transition-colors ${
-                  isActive ? 'text-transparent' : 'text-text-muted hover:text-text'
+                  isActive ? 'text-accent' : 'text-text-muted hover:text-text'
                 }`}
+                style={
+                  isActive
+                    ? {
+                        background:
+                          'radial-gradient(circle at center, var(--accent-soft) 0%, transparent 70%)',
+                        filter: 'drop-shadow(0 0 6px rgba(202, 255, 58, 0.45))',
+                      }
+                    : undefined
+                }
               >
-                {/* Default icon (hidden when active, replaced by the raised circle above) */}
                 {tab.icon}
                 {isWorkout && hasActiveWorkout && !isActive && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-brand rounded-full pulse-glow" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full pulse-glow" />
                 )}
               </NavLink>
             )
           })}
         </div>
-
-        {/* Raised active circle — spring-animates between slots */}
-        {activeIndex >= 0 && (
-          <motion.div
-            layout
-            className="absolute top-0 left-0 pointer-events-none"
-            style={{
-              width: `${100 / tabs.length}%`,
-            }}
-            animate={{ x: `${activeIndex * 100}%` }}
-            transition={{ type: 'spring', stiffness: 520, damping: 32 }}
-          >
-            <div className="flex justify-center">
-              <div
-                className="-translate-y-3 w-12 h-12 rounded-full bg-brand text-white flex items-center justify-center shadow-card glow-ring-brand"
-                style={{ boxShadow: '0 8px 20px -4px var(--brand-soft), 0 0 0 4px var(--bg)' }}
-              >
-                {tabs[activeIndex].icon}
-                {tabs[activeIndex].to === '/workout' && hasActiveWorkout && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-gold rounded-full pulse-glow" />
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
       </div>
     </nav>
   )

@@ -29,7 +29,7 @@ export const QuickAddFab = () => {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 480, damping: 26 }}
       aria-label={label}
-      className="fixed right-4 bottom-[92px] z-40 safe-bottom w-14 h-14 rounded-full bg-brand text-white flex items-center justify-center shadow-card glow-ring-brand"
+      className="fixed right-4 bottom-[92px] z-40 safe-bottom w-14 h-14 rounded-full bg-accent text-accent-ink flex items-center justify-center shadow-card glow-ring-brand"
     >
       {activeWorkout ? (
         <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">

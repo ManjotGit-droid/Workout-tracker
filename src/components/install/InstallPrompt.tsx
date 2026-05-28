@@ -116,7 +116,7 @@ export const InstallPrompt = () => {
               </div>
               <button
                 onClick={handleInstall}
-                className="app-btn bg-brand text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+                className="app-btn bg-accent text-accent-ink text-xs font-semibold px-3 py-1.5 rounded-lg"
               >
                 Install
               </button>
@@ -170,7 +170,7 @@ export const InstallPrompt = () => {
               </ol>
               <button
                 onClick={() => { setShowIosGuide(false); dismiss() }}
-                className="app-btn w-full bg-brand text-white text-sm font-semibold py-3 rounded-lg"
+                className="app-btn w-full bg-accent text-accent-ink text-sm font-semibold py-3 rounded-lg"
               >
                 Got it
               </button>

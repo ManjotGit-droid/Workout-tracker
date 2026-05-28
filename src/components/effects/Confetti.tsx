@@ -12,13 +12,15 @@ type ParticleKind = 'tri' | 'square' | 'circle'
 // Hand-drawn particle palette. Six pieces is enough to read as "confetti"
 // without becoming distracting. Each particle is laid out around the origin
 // and animated outward with framer-motion.
+// Forge palette: one accent + muted neutrals. Reads as celebratory
+// without dragging back rainbow noise.
 const PARTICLES: Array<{ x: number; y: number; angle: number; color: string; kind: ParticleKind }> = [
-  { x:  60, y: -10, angle:   15, color: '#fbbf24', kind: 'tri' },
-  { x: -50, y:  10, angle:  -25, color: '#38c6f0', kind: 'square' },
-  { x:  30, y:  60, angle:   45, color: '#ec4899', kind: 'circle' },
-  { x: -70, y: -30, angle: -120, color: '#a855f7', kind: 'tri' },
-  { x:  80, y:  40, angle:   75, color: '#22ee99', kind: 'square' },
-  { x: -30, y:  70, angle:  -90, color: '#f59e0b', kind: 'circle' },
+  { x:  60, y: -10, angle:   15, color: 'var(--accent)',       kind: 'tri' },
+  { x: -50, y:  10, angle:  -25, color: 'var(--brand-bright)', kind: 'square' },
+  { x:  30, y:  60, angle:   45, color: 'var(--text-soft)',    kind: 'circle' },
+  { x: -70, y: -30, angle: -120, color: 'var(--accent)',       kind: 'tri' },
+  { x:  80, y:  40, angle:   75, color: 'var(--text-muted)',   kind: 'square' },
+  { x: -30, y:  70, angle:  -90, color: 'var(--brand-bright)', kind: 'circle' },
 ]
 
 /**
